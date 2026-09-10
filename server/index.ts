@@ -127,16 +127,32 @@ app.post('/api/ideas', (request, response) => {
 })
 app.patch('/api/projects/:id', (request, response) => {
   const project = projects.find((item) => item.id === Number(request.params.id))
-  const primaryStatusId = request.body.primaryStatusId as string | undefined
   if (!project) {
     response.status(404).json({ error: 'Projekt nicht gefunden.' })
     return
   }
-  if (!primaryStatusId || !projectStatuses.some((status) => status.id === primaryStatusId)) {
+  const update = request.body as Partial<(typeof projects)[number]>
+  if (update.primaryStatusId && !projectStatuses.some((status) => status.id === update.primaryStatusId)) {
     response.status(400).json({ error: 'Ungueltiger Projektstatus.' })
     return
   }
-  project.primaryStatusId = primaryStatusId
+  if (update.progress !== undefined && (!Number.isInteger(update.progress) || update.progress < 0 || update.progress > 100)) {
+    response.status(400).json({ error: 'Fortschritt muss eine ganze Zahl zwischen 0 und 100 sein.' })
+    return
+  }
+  if (update.name !== undefined && !update.name.trim()) {
+    response.status(400).json({ error: 'Projektname darf nicht leer sein.' })
+    return
+  }
+  if (update.client !== undefined && !update.client.trim()) {
+    response.status(400).json({ error: 'Organisation darf nicht leer sein.' })
+    return
+  }
+  if (update.nextStep !== undefined && !update.nextStep.trim()) {
+    response.status(400).json({ error: 'Nächster Schritt darf nicht leer sein.' })
+    return
+  }
+  Object.assign(project, update)
   response.json(project)
 })
 app.patch('/api/ideas/:id', (request, response) => {

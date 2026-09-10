@@ -6,6 +6,8 @@ Grundgeruest fuer ein Portal zur Projektbegleitung. Die API verwendet vorerst au
 
 Ein Projekt ist der Fuehrungsrahmen und besitzt genau einen **primaeren Projektstatus**. Diese Stati sind als Katalog konfigurierbar (`/api/project-statuses`), zum Beispiel `Geplant`, `In Bearbeitung`, `Pausiert` und `Abgeschlossen`.
 
+In der Projektakte können Name, Organisation, primärer Status, Fortschritt und nächster Schritt bearbeitet werden. Sie zeigt alle verknüpften Ideen und legt neue Ideen direkt mit der Projektzuordnung an.
+
 Ein Projekt besitzt eine oder mehrere **Ideen**. Jede Idee hat einen **sekundaeren Ideenstatus** aus dem versionierten InnoV-Katalog (`/api/idea-stages`): `Ideate`, `Validate`, `Experiment`, `Evolve` und `Implement`. Damit bleiben operative Projektsteuerung und Innovationsfortschritt bewusst getrennt. Problemstellung, Ideen und Wissensstand bilden den Eingang des Prozesses und sind keine Ideenstati.
 
 ## Innovationsakte
