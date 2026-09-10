@@ -113,7 +113,7 @@ function App() {
   return (
     <main className="shell">
       <aside className="sidebar">
-        <a className="brand" href="/">projekt<span>raum</span></a>
+        <a className="brand" href="/">Project-Tool<span>Inno V</span></a>
         <nav aria-label="Hauptnavigation">
           <button className={`nav-item ${page === 'overview' ? 'active' : ''}`} type="button" onClick={() => setPage('overview')}><LayoutDashboard size={18} /> Übersicht</button>
           <button className={`nav-item ${page === 'projects' ? 'active' : ''}`} type="button" onClick={() => setPage('projects')}><FolderKanban size={18} /> Projekte</button>
