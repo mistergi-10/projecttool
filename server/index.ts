@@ -97,16 +97,16 @@ const taskTemplates: TaskTemplate[] = [
 ]
 
 const projects = [
-  { id: 1, name: 'Digitaler Empfang', client: 'Hofmann & Partner', primaryStatusId: 'active', progress: 64, nextStep: 'Workshop vorbereiten' },
-  { id: 2, name: 'CRM-Neustart', client: 'Kernwerk GmbH', primaryStatusId: 'active', progress: 42, nextStep: 'Abnahme planen' },
-  { id: 3, name: 'Prozesslandkarte', client: 'Stadtwerke Nord', primaryStatusId: 'planned', progress: 27, nextStep: 'Interviews terminieren' },
+  { id: 1, name: 'Drohnenlagebild 2030', client: 'Kommando Einsatzunterstützung', primaryStatusId: 'active', progress: 64, nextStep: 'Feldversuch vorbereiten' },
+  { id: 2, name: 'Mobiler Sanitätsassistent', client: 'Ausbildungszentrum Sanität', primaryStatusId: 'active', progress: 42, nextStep: 'MVP-Abnahme planen' },
+  { id: 3, name: 'Resiliente Feldlogistik', client: 'Logistikbasis Nord', primaryStatusId: 'planned', progress: 27, nextStep: 'Nutzerinterviews terminieren' },
 ]
 
 const ideas: Idea[] = [
-  { id: 1, projectId: 1, title: 'Digitale Besuchsanmeldung', secondaryStatusId: 'experiment', problemStatement: 'Besuchende warten am Empfang und erhalten uneinheitliche Informationen.', submitter: 'M. Keller', ideaOwner: 'M. Keller', businessOwner: 'L. Hofmann', implementationPathId: 'innovation-unit', gateId: 'gate-2', gateStatus: 'open' },
-  { id: 2, projectId: 1, title: 'Selbstbedienungs-Terminal', secondaryStatusId: 'validate', problemStatement: 'Wiederkehrende Besuchende benötigen einen schnelleren, barrierearmen Zugang.', submitter: 'S. Meier', ideaOwner: 'S. Meier', businessOwner: 'L. Hofmann', implementationPathId: 'decentralized', gateId: 'pathfinder-call', gateStatus: 'open' },
-  { id: 3, projectId: 2, title: 'Gemeinsame Kundensicht', secondaryStatusId: 'evolve', problemStatement: 'Beratungsteams sehen relevante Kundeninformationen nicht einheitlich.', submitter: 'A. Kern', ideaOwner: 'A. Kern', businessOwner: 'P. Kern', implementationPathId: 'rio', gateId: 'gate-3', gateStatus: 'open' },
-  { id: 4, projectId: 3, title: 'Prozesswissen sichtbar machen', secondaryStatusId: 'ideate', problemStatement: 'Wissen über kritische Prozessschritte ist nur bei einzelnen Personen vorhanden.', submitter: 'T. Berger', ideaOwner: 'T. Berger', businessOwner: '', implementationPathId: '', gateId: 'quality-check', gateStatus: 'open' },
+  { id: 1, projectId: 1, title: 'Mobiles Lagebild für Kleindrohnen', secondaryStatusId: 'experiment', problemStatement: 'Einsatzkräfte erhalten Lageinformationen von Kleindrohnen nicht zeitgerecht und einheitlich.', submitter: 'Hptm M. Keller', ideaOwner: 'Hptm M. Keller', businessOwner: 'Oberst L. Hofmann', implementationPathId: 'innovation-unit', gateId: 'gate-2', gateStatus: 'open' },
+  { id: 2, projectId: 1, title: 'Autonome Startplatzprüfung', secondaryStatusId: 'validate', problemStatement: 'Drohnencrews benötigen eine rasche und sichere Beurteilung möglicher Startplätze.', submitter: 'Oblt S. Meier', ideaOwner: 'Oblt S. Meier', businessOwner: 'Oberst L. Hofmann', implementationPathId: 'drones', gateId: 'pathfinder-call', gateStatus: 'open' },
+  { id: 3, projectId: 2, title: 'Triagehilfe im Einsatzraum', secondaryStatusId: 'evolve', problemStatement: 'Sanitätsteams benötigen unter Zeitdruck eine einheitliche digitale Triageunterstützung.', submitter: 'Dr. A. Kern', ideaOwner: 'Dr. A. Kern', businessOwner: 'Oberst P. Kern', implementationPathId: 'rio', gateId: 'gate-3', gateStatus: 'open' },
+  { id: 4, projectId: 3, title: 'Materialfluss im Feld sichtbar machen', secondaryStatusId: 'ideate', problemStatement: 'Kritisches Material und Nachschub sind entlang der Feldlogistik nur eingeschränkt transparent.', submitter: 'Hptfw T. Berger', ideaOwner: 'Hptfw T. Berger', businessOwner: '', implementationPathId: '', gateId: 'quality-check', gateStatus: 'open' },
 ]
 
 const projectTasks: ProjectTask[] = [
