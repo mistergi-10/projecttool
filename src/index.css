@@ -1,0 +1,5 @@
+:root { font-family: Georgia, 'Times New Roman', serif; color: #1e2a26; background: #f5f3ed; font-synthesis: none; text-rendering: optimizeLegibility; }
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; }
+button, a { font: inherit; }
+button { cursor: pointer; }
