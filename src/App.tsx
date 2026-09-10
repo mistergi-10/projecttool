@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import {
   Bell,
+  CalendarDays,
   ChevronRight,
   CirclePlus,
   FolderKanban,
@@ -56,6 +57,15 @@ type Reminder = {
   projectId: number;
   title: string;
   dueDate: string;
+};
+type CalendarEvent = {
+  id: number;
+  title: string;
+  date: string;
+  time: string;
+  location: string;
+  type: "InnoBoard V" | "Pfadfinder-Call" | "Workshop";
+  projectId: number | null;
 };
 type PortalData = {
   projects: Project[];
@@ -115,6 +125,7 @@ function App() {
   const [taskTemplates, setTaskTemplates] = useState<TaskTemplate[]>([]);
   const [projectTasks, setProjectTasks] = useState<ProjectTask[]>([]);
   const [reminders, setReminders] = useState<Reminder[]>([]);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [apiAvailable, setApiAvailable] = useState(false);
   const [projectQuery, setProjectQuery] = useState("");
   const [projectStatusFilter, setProjectStatusFilter] = useState("all");
@@ -123,7 +134,7 @@ function App() {
   const [ideaPathFilter, setIdeaPathFilter] = useState("all");
   const [onlyOpenGates, setOnlyOpenGates] = useState(false);
   const [page, setPage] = useState<
-    "overview" | "projects" | "ideas" | "settings"
+    "overview" | "projects" | "ideas" | "events" | "settings"
   >("overview");
   const [form, setForm] = useState<"project" | "idea" | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState(1);
@@ -149,6 +160,10 @@ function App() {
       .then((response) => (response.ok ? response.json() : Promise.reject()))
       .then((data: Reminder[]) => setReminders(data))
       .catch(() => setReminders([]));
+    fetch("/api/events")
+      .then((response) => (response.ok ? response.json() : Promise.reject()))
+      .then((data: CalendarEvent[]) => setEvents(data))
+      .catch(() => setEvents([]));
   }, []);
 
   const updateProjectStatus = async (
@@ -369,6 +384,13 @@ function App() {
             <Lightbulb size={18} /> Ideen
           </button>
           <button
+            className={`nav-item ${page === "events" ? "active" : ""}`}
+            type="button"
+            onClick={() => setPage("events")}
+          >
+            <CalendarDays size={18} /> Termine
+          </button>
+          <button
             className={`nav-item ${page === "settings" ? "active" : ""}`}
             type="button"
             onClick={() => setPage("settings")}
@@ -393,6 +415,8 @@ function App() {
                 ? "Projekte"
                 : page === "ideas"
                   ? "Ideen"
+                  : page === "events"
+                    ? "Termine"
                   : "Einstellungen"}
           </div>
           <button
@@ -414,6 +438,8 @@ function App() {
                     ? "Projekte steuern."
                     : page === "ideas"
                       ? "Ideen entwickeln."
+                      : page === "events"
+                        ? "Termine koordinieren."
                       : "Standardaufgaben verwalten."}
               </h1>
             </div>
@@ -751,6 +777,25 @@ function App() {
                     </label>
                   ))}
                 </div>
+              </div>
+            </section>
+          )}
+          {page === "events" && (
+            <section className="events-section">
+              <div className="section-heading">
+                <div>
+                  <h2>Terminkalender 2027</h2>
+                  <p>Fiktive Planungsdaten für die Präsentation des InnoBoard V.</p>
+                </div>
+              </div>
+              <div className="event-timeline">
+                {events.map((event) => {
+                  const date = new Date(`${event.date}T${event.time}`);
+                  return <article className="event-card" key={event.id}>
+                    <time dateTime={event.date}><strong>{date.toLocaleDateString("de-CH", { day: "2-digit" })}</strong><span>{date.toLocaleDateString("de-CH", { month: "short", year: "numeric" })}</span></time>
+                    <div><span className="event-type"><CalendarDays size={15} /> {event.type}</span><h3>{event.title}</h3><p>{event.time} Uhr · {event.location}</p></div>
+                  </article>;
+                })}
               </div>
             </section>
           )}

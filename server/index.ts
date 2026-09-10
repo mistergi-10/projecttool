@@ -59,6 +59,16 @@ type ProjectTask = {
   dueDate: string
 }
 
+type CalendarEvent = {
+  id: number
+  title: string
+  date: string
+  time: string
+  location: string
+  type: 'InnoBoard V' | 'Pfadfinder-Call' | 'Workshop'
+  projectId: number | null
+}
+
 const projectStatuses: ProjectStatus[] = [
   { id: 'planned', label: 'Geplant', color: '#7b8b83', order: 1 },
   { id: 'active', label: 'In Bearbeitung', color: '#236052', order: 2 },
@@ -118,6 +128,13 @@ const projectTasks: ProjectTask[] = [
   { id: 3, projectId: 2, title: 'APLAN abgesprochen', completed: false, templateId: 1, dueDate: '2026-09-11' },
 ]
 
+const calendarEvents: CalendarEvent[] = [
+  { id: 1, title: 'InnoBoard V - 1. Sitzung', date: '2027-02-18', time: '09:00', location: 'Bern, Sitzungszimmer A', type: 'InnoBoard V', projectId: null },
+  { id: 2, title: 'InnoBoard V - 2. Sitzung', date: '2027-05-20', time: '09:00', location: 'Bern, Sitzungszimmer A', type: 'InnoBoard V', projectId: null },
+  { id: 3, title: 'InnoBoard V - 3. Sitzung', date: '2027-08-19', time: '09:00', location: 'Bern, Sitzungszimmer A', type: 'InnoBoard V', projectId: null },
+  { id: 4, title: 'InnoBoard V - 4. Sitzung', date: '2027-11-18', time: '09:00', location: 'Bern, Sitzungszimmer A', type: 'InnoBoard V', projectId: null },
+]
+
 const dueDateAfter = (days: number) => {
   const date = new Date()
   date.setDate(date.getDate() + days)
@@ -149,6 +166,7 @@ app.get('/api/tasks', (request, response) => {
   response.json(Number.isFinite(projectId) ? projectTasks.filter((task) => task.projectId === projectId) : projectTasks)
 })
 app.get('/api/reminders', (_request, response) => response.json(reminders()))
+app.get('/api/events', (_request, response) => response.json(calendarEvents))
 app.get('/api/ideas', (request, response) => {
   const projectId = Number(request.query.projectId)
   response.json(Number.isFinite(projectId) ? ideas.filter((idea) => idea.projectId === projectId) : ideas)
