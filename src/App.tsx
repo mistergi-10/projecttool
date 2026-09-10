@@ -131,7 +131,7 @@ function App() {
           <button className="icon-button" type="button" aria-label="Benachrichtigungen"><Bell size={19} /></button>
         </header>
         <div className="content">
-          <div className="title-row"><div><p className="eyebrow">Projektbegleitung</p><h1>{page === 'overview' ? 'Projektarbeit im Blick.' : page === 'projects' ? 'Projekte steuern.' : 'Ideen entwickeln.'}</h1></div><button className="primary-button" type="button" onClick={page === 'ideas' ? () => openIdeaForm() : openProjectForm}><CirclePlus size={18} /> {page === 'ideas' ? 'Idee anlegen' : 'Projekt anlegen'}</button></div>
+          <div className="title-row"><div><p className="eyebrow">Projektbegleitung</p><h1>{page === 'overview' ? 'Project-Tool Inno V' : page === 'projects' ? 'Projekte steuern.' : 'Ideen entwickeln.'}</h1></div><button className="primary-button" type="button" onClick={page === 'ideas' ? () => openIdeaForm() : openProjectForm}><CirclePlus size={18} /> {page === 'ideas' ? 'Idee anlegen' : 'Projekt anlegen'}</button></div>
 
           {message && <p className="message">{message}</p>}
           {page === 'overview' && <><section className="overview" aria-label="Übersicht">
