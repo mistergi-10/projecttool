@@ -6,26 +6,38 @@ type Project = {
   id: number
   name: string
   client: string
-  phase: string
+  primaryStatusId: string
   progress: number
   nextStep: string
 }
 
+type ProjectStatus = { id: string; label: string }
+type Idea = { id: number; projectId: number; title: string; secondaryStatusId: string }
+
 const initialProjects: Project[] = [
-  { id: 1, name: 'Digitaler Empfang', client: 'Hofmann & Partner', phase: 'Konzeption', progress: 64, nextStep: 'Workshop vorbereiten' },
-  { id: 2, name: 'CRM-Neustart', client: 'Kernwerk GmbH', phase: 'Umsetzung', progress: 42, nextStep: 'Abnahme planen' },
-  { id: 3, name: 'Prozesslandkarte', client: 'Stadtwerke Nord', phase: 'Analyse', progress: 27, nextStep: 'Interviews terminieren' },
+  { id: 1, name: 'Digitaler Empfang', client: 'Hofmann & Partner', primaryStatusId: 'active', progress: 64, nextStep: 'Workshop vorbereiten' },
+  { id: 2, name: 'CRM-Neustart', client: 'Kernwerk GmbH', primaryStatusId: 'active', progress: 42, nextStep: 'Abnahme planen' },
+  { id: 3, name: 'Prozesslandkarte', client: 'Stadtwerke Nord', primaryStatusId: 'planned', progress: 27, nextStep: 'Interviews terminieren' },
+]
+
+const initialStatuses: ProjectStatus[] = [
+  { id: 'planned', label: 'Geplant' },
+  { id: 'active', label: 'In Bearbeitung' },
 ]
 
 function App() {
   const [projects, setProjects] = useState<Project[]>(initialProjects)
+  const [projectStatuses, setProjectStatuses] = useState<ProjectStatus[]>(initialStatuses)
+  const [ideas, setIdeas] = useState<Idea[]>([])
   const [apiAvailable, setApiAvailable] = useState(false)
 
   useEffect(() => {
-    fetch('/api/projects')
+    fetch('/api/portal')
       .then((response) => response.ok ? response.json() : Promise.reject())
-      .then((data: Project[]) => {
-        setProjects(data)
+      .then((data: { projects: Project[]; projectStatuses: ProjectStatus[]; ideas: Idea[] }) => {
+        setProjects(data.projects)
+        setProjectStatuses(data.projectStatuses)
+        setIdeas(data.ideas)
         setApiAvailable(true)
       })
       .catch(() => setApiAvailable(false))
@@ -69,9 +81,9 @@ function App() {
               {projects.map((project) => <article className="project-row" key={project.id}>
                 <div className="project-mark">{project.name.slice(0, 1)}</div>
                 <div className="project-name"><h3>{project.name}</h3><p>{project.client}</p></div>
-                <div className="phase"><span>{project.phase}</span></div>
+                <div className="phase"><span>{projectStatuses.find((status) => status.id === project.primaryStatusId)?.label ?? 'Ohne Status'}</span></div>
                 <div className="progress"><span>{project.progress}%</span><div><i style={{ width: `${project.progress}%` }}></i></div></div>
-                <div className="next-step"><span>Nächster Schritt</span><strong>{project.nextStep}</strong></div>
+                <div className="next-step"><span>{ideas.filter((idea) => idea.projectId === project.id).length} Ideen · Nächster Schritt</span><strong>{project.nextStep}</strong></div>
                 <button className="row-action" type="button" aria-label={`${project.name} öffnen`}><ChevronRight size={19} /></button>
               </article>)}
             </div>
