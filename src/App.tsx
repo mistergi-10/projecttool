@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   Lightbulb,
   ListChecks,
+  Mail,
   Plus,
   Search,
   Settings,
@@ -22,6 +23,7 @@ type Project = {
   primaryStatusId: string;
   progress: number;
   nextStep: string;
+  userIds: number[];
 };
 
 type ProjectStatus = { id: string; label: string };
@@ -41,6 +43,15 @@ type Idea = {
   gateId: string;
   gateStatus: "open" | "passed" | "not-required";
   gateDueDate: string;
+  userIds: number[];
+};
+type User = {
+  id: number;
+  displayName: string;
+  email: string;
+  active: boolean;
+  externalId: string | null;
+  source: "local" | "iam";
 };
 type TaskTemplate = { id: number; title: string; active: boolean };
 type ProjectTask = {
@@ -68,6 +79,14 @@ type CalendarEvent = {
   projectId: number | null;
   ideaIds: number[];
 };
+type MailSettings = {
+  enabled: boolean;
+  host: string;
+  port: number;
+  username: string;
+  fromAddress: string;
+  secure: boolean;
+};
 type PortalData = {
   projects: Project[];
   projectStatuses: ProjectStatus[];
@@ -77,9 +96,10 @@ type PortalData = {
   gates: Gate[];
   taskTemplates: TaskTemplate[];
   projectTasks: ProjectTask[];
+  users: User[];
 };
 
-const APP_VERSION = "0.2.0";
+const APP_VERSION = "0.3.0";
 
 const initialProjects: Project[] = [
   {
@@ -89,6 +109,7 @@ const initialProjects: Project[] = [
     primaryStatusId: "active",
     progress: 64,
     nextStep: "Workshop vorbereiten",
+    userIds: [],
   },
   {
     id: 2,
@@ -97,6 +118,7 @@ const initialProjects: Project[] = [
     primaryStatusId: "active",
     progress: 42,
     nextStep: "Abnahme planen",
+    userIds: [],
   },
   {
     id: 3,
@@ -105,6 +127,7 @@ const initialProjects: Project[] = [
     primaryStatusId: "planned",
     progress: 27,
     nextStep: "Interviews terminieren",
+    userIds: [],
   },
 ];
 
@@ -112,6 +135,15 @@ const initialStatuses: ProjectStatus[] = [
   { id: "planned", label: "Geplant" },
   { id: "active", label: "In Bearbeitung" },
 ];
+
+const initialMailSettings: MailSettings = {
+  enabled: false,
+  host: "",
+  port: 587,
+  username: "",
+  fromAddress: "",
+  secure: true,
+};
 
 function App() {
   const [projects, setProjects] = useState<Project[]>(initialProjects);
@@ -127,6 +159,11 @@ function App() {
   const [projectTasks, setProjectTasks] = useState<ProjectTask[]>([]);
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [mailSettings, setMailSettings] =
+    useState<MailSettings>(initialMailSettings);
+  const [users, setUsers] = useState<User[]>([]);
+  const [inviteEventId, setInviteEventId] = useState<number | null>(null);
+  const [inviteRecipients, setInviteRecipients] = useState("");
   const [apiAvailable, setApiAvailable] = useState(false);
   const [projectQuery, setProjectQuery] = useState("");
   const [projectStatusFilter, setProjectStatusFilter] = useState("all");
@@ -135,9 +172,9 @@ function App() {
   const [ideaPathFilter, setIdeaPathFilter] = useState("all");
   const [onlyOpenGates, setOnlyOpenGates] = useState(false);
   const [page, setPage] = useState<
-    "overview" | "projects" | "ideas" | "events" | "settings"
+    "overview" | "projects" | "ideas" | "events" | "users" | "settings"
   >("overview");
-  const [form, setForm] = useState<"project" | "idea" | null>(null);
+  const [form, setForm] = useState<"project" | "idea" | "event" | "user" | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState(1);
   const [ideaProjectId, setIdeaProjectId] = useState<number | null>(null);
   const [message, setMessage] = useState("");
@@ -154,6 +191,7 @@ function App() {
         setGates(data.gates);
         setTaskTemplates(data.taskTemplates);
         setProjectTasks(data.projectTasks);
+        setUsers(data.users);
         setApiAvailable(true);
       })
       .catch(() => setApiAvailable(false));
@@ -165,6 +203,10 @@ function App() {
       .then((response) => (response.ok ? response.json() : Promise.reject()))
       .then((data: CalendarEvent[]) => setEvents(data))
       .catch(() => setEvents([]));
+    fetch("/api/settings/mail")
+      .then((response) => (response.ok ? response.json() : Promise.reject()))
+      .then((data: MailSettings) => setMailSettings(data))
+      .catch(() => setMailSettings(initialMailSettings));
   }, []);
 
   const updateProjectStatus = async (
@@ -204,10 +246,11 @@ function App() {
   const createProject = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
+    const userIds = formData.getAll("userIds").map(Number);
     const response = await fetch("/api/projects", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(Object.fromEntries(formData)),
+      body: JSON.stringify({ ...Object.fromEntries(formData), userIds }),
     });
     if (!response.ok) return setMessage("Bitte alle Projektfelder ausfüllen.");
     const project = (await response.json()) as Project;
@@ -219,11 +262,13 @@ function App() {
 
   const createIdea = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const data = Object.fromEntries(new FormData(event.currentTarget));
+    const formData = new FormData(event.currentTarget);
+    const data = Object.fromEntries(formData);
+    const userIds = formData.getAll("userIds").map(Number);
     const response = await fetch("/api/ideas", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...data, projectId: Number(data.projectId) }),
+      body: JSON.stringify({ ...data, projectId: Number(data.projectId), userIds }),
     });
     if (!response.ok)
       return setMessage("Bitte Projekt, Titel und Innovationsstatus wählen.");
@@ -233,13 +278,64 @@ function App() {
     setPage("ideas");
   };
 
+  const createUser = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const response = await fetch("/api/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(Object.fromEntries(new FormData(event.currentTarget))),
+    });
+    if (!response.ok) return setMessage("Bitte einen Benutzernamen eingeben.");
+    const user = (await response.json()) as User;
+    setUsers((current) => [...current, user]);
+    setForm(null);
+    setMessage("Benutzer angelegt.");
+  };
+
+  const updateUser = async (userId: number, update: Partial<User>) => {
+    const response = await fetch(`/api/users/${userId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(update),
+    });
+    if (!response.ok) return setMessage("Der Benutzer konnte nicht gespeichert werden.");
+    const updated = (await response.json()) as User;
+    setUsers((current) => current.map((user) => user.id === updated.id ? updated : user));
+  };
+
+  const createEvent = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const ideaIds = formData.getAll("ideaIds").map(Number);
+    const projectId = formData.get("projectId")?.toString();
+    const response = await fetch("/api/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: formData.get("title"),
+        date: formData.get("date"),
+        time: formData.get("time"),
+        location: formData.get("location"),
+        type: formData.get("type"),
+        projectId: projectId ? Number(projectId) : null,
+        ideaIds,
+      }),
+    });
+    if (!response.ok) return setMessage("Bitte die Terminangaben prüfen.");
+    const createdEvent = (await response.json()) as CalendarEvent;
+    setEvents((current) => [...current, createdEvent]);
+    setForm(null);
+    setMessage("Termin angelegt.");
+  };
+
   const saveProject = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const data = Object.fromEntries(new FormData(event.currentTarget));
+    const formData = new FormData(event.currentTarget);
+    const data = Object.fromEntries(formData);
     const response = await fetch(`/api/projects/${selectedProjectId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...data, progress: Number(data.progress) }),
+      body: JSON.stringify({ ...data, progress: Number(data.progress), userIds: formData.getAll("userIds").map(Number) }),
     });
     if (!response.ok)
       return setMessage("Die Projektakte konnte nicht gespeichert werden.");
@@ -277,6 +373,44 @@ function App() {
     setEvents((current) =>
       current.map((event) => (event.id === updated.id ? updated : event)),
     );
+  };
+
+  const saveMailSettings = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const response = await fetch("/api/settings/mail", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(mailSettings),
+    });
+    if (!response.ok) return setMessage("Die Mail-Einstellungen konnten nicht gespeichert werden.");
+    setMailSettings((await response.json()) as MailSettings);
+    setMessage("Mail-Einstellungen gespeichert. Der Versand ist noch nicht angebunden.");
+  };
+
+  const openEventInvite = (event: CalendarEvent) => {
+    setInviteEventId((current) => (current === event.id ? null : event.id));
+    setInviteRecipients("");
+  };
+
+  const createEventMailto = (event: CalendarEvent) => {
+    const linkedIdeas = event.ideaIds
+      .map((ideaId) => ideas.find((idea) => idea.id === ideaId)?.title)
+      .filter(Boolean);
+    const linkedProjectIds = [
+      event.projectId,
+      ...event.ideaIds.map((ideaId) => ideas.find((idea) => idea.id === ideaId)?.projectId ?? null),
+    ].filter((projectId): projectId is number => projectId !== null);
+    const linkedProjects = [...new Set(linkedProjectIds)].map(projectName);
+    const body = [
+      `Einladung: ${event.title}`,
+      "",
+      `Datum: ${event.date}`,
+      `Zeit: ${event.time} Uhr`,
+      `Ort: ${event.location}`,
+      linkedProjects.length ? `Projekte: ${linkedProjects.join(", ")}` : "",
+      linkedIdeas.length ? `Ideen: ${linkedIdeas.join(", ")}` : "",
+    ].filter(Boolean).join("\n");
+    window.open(`mailto:${encodeURIComponent(inviteRecipients.trim())}?subject=${encodeURIComponent(event.title)}&body=${encodeURIComponent(body)}`, "_self");
   };
 
   const createTask = async (event: FormEvent<HTMLFormElement>) => {
@@ -368,6 +502,14 @@ function App() {
     setIdeaProjectId(projectId);
     setForm("idea");
   };
+  const openEventForm = () => {
+    setMessage("");
+    setForm("event");
+  };
+  const openUserForm = () => {
+    setMessage("");
+    setForm("user");
+  };
 
   return (
     <main className="shell">
@@ -411,6 +553,13 @@ function App() {
           >
             <Settings size={18} /> Einstellungen
           </button>
+          <button
+            className={`nav-item ${page === "users" ? "active" : ""}`}
+            type="button"
+            onClick={() => setPage("users")}
+          >
+            <FolderKanban size={18} /> Benutzer
+          </button>
         </nav>
         <div className="sidebar-footer">
           <span className={apiAvailable ? "status online" : "status"}></span>
@@ -431,7 +580,9 @@ function App() {
                   ? "Ideen"
                   : page === "events"
                     ? "Termine"
-                  : "Einstellungen"}
+                    : page === "users"
+                      ? "Benutzer"
+                      : "Einstellungen"}
           </div>
           <button
             className="icon-button"
@@ -454,7 +605,9 @@ function App() {
                       ? "Ideen entwickeln."
                       : page === "events"
                         ? "Termine koordinieren."
-                      : "Standardaufgaben verwalten."}
+                        : page === "users"
+                          ? "Benutzer verwalten."
+                          : "Einstellungen verwalten."}
               </h1>
             </div>
             {page !== "settings" && (
@@ -462,11 +615,23 @@ function App() {
                 className="primary-button"
                 type="button"
                 onClick={
-                  page === "ideas" ? () => openIdeaForm() : openProjectForm
+                  page === "ideas"
+                    ? () => openIdeaForm()
+                    : page === "events"
+                      ? openEventForm
+                      : page === "users"
+                        ? openUserForm
+                      : openProjectForm
                 }
               >
                 <CirclePlus size={18} />{" "}
-                {page === "ideas" ? "Idee anlegen" : "Projekt anlegen"}
+                {page === "ideas"
+                  ? "Idee anlegen"
+                  : page === "events"
+                    ? "Termin anlegen"
+                    : page === "users"
+                      ? "Benutzer anlegen"
+                    : "Projekt anlegen"}
               </button>
             )}
           </div>
@@ -509,11 +674,11 @@ function App() {
                   <small>Projektübersicht öffnen</small>
                 </button>
               </section>
-              <section className="reminder-panel" aria-label="Nächste Fälligkeiten">
+              <section className="reminder-panel" aria-label="Termine aus Projekten und Ideen">
                 <div className="section-heading">
                   <div>
-                    <h2>Nächste Fälligkeiten</h2>
-                    <p>Aufgaben, Gates und Pfadfinder-Calls mit Handlungsbedarf.</p>
+                    <h2>Aus Projekten und Ideen</h2>
+                    <p>Fälligkeiten aus Aufgaben, Gates und Pfadfinder-Calls.</p>
                   </div>
                 </div>
                 <div className="reminder-list">
@@ -537,6 +702,31 @@ function App() {
                   {reminders.length === 0 && (
                     <p className="empty-state">Keine offenen Fälligkeiten.</p>
                   )}
+                </div>
+              </section>
+              <section className="overview-calendar-lists" aria-label="Terminübersicht">
+                <div className="reminder-panel">
+                  <div className="section-heading">
+                    <div>
+                      <h2>Aus der Terminverwaltung</h2>
+                      <p>Geplante Sitzungen, Workshops und Calls.</p>
+                    </div>
+                    <button className="text-button" type="button" onClick={() => setPage("events")}>
+                      Alle Termine <ChevronRight size={16} />
+                    </button>
+                  </div>
+                  <div className="reminder-list">
+                    {events.slice().sort((left, right) => `${left.date}T${left.time}`.localeCompare(`${right.date}T${right.time}`)).slice(0, 5).map((calendarEvent) => (
+                      <button className="reminder-row" key={calendarEvent.id} type="button" onClick={() => setPage("events")}>
+                        <time dateTime={`${calendarEvent.date}T${calendarEvent.time}`}>{calendarEvent.date}</time>
+                        <span>{calendarEvent.type}</span>
+                        <strong>{calendarEvent.title}</strong>
+                        <small>{calendarEvent.location}</small>
+                        <ChevronRight size={17} />
+                      </button>
+                    ))}
+                    {events.length === 0 && <p className="empty-state">Keine verwalteten Termine.</p>}
+                  </div>
                 </div>
               </section>
               <section className="projects-section">
@@ -668,6 +858,16 @@ function App() {
                           required
                         />
                       </label>
+                      <label>
+                        Zugeordnete Benutzer
+                        <select name="userIds" multiple defaultValue={selectedProject.userIds.map(String)}>
+                          {users.map((user) => (
+                            <option key={user.id} value={user.id} disabled={!user.active}>
+                              {user.displayName}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
                       <button className="primary-button" type="submit">
                         Projekt speichern
                       </button>
@@ -743,6 +943,41 @@ function App() {
               )}
             </section>
           )}
+          {page === "users" && (
+            <section className="users-section">
+              <div className="section-heading">
+                <div>
+                  <h2>Benutzerverzeichnis</h2>
+                  <p>Lokale Testbenutzer für direkte Projekt- und Ideen-Zuordnungen.</p>
+                </div>
+              </div>
+              <div className="settings-panel user-list">
+                {users.map((user) => (
+                  <div className="user-row" key={user.id}>
+                    <div className="user-avatar">{user.displayName.slice(0, 1)}</div>
+                    <label>
+                      Name
+                      <input defaultValue={user.displayName} onBlur={(event) => {
+                        if (event.target.value !== user.displayName) updateUser(user.id, { displayName: event.target.value });
+                      }} />
+                    </label>
+                    <label>
+                      E-Mail
+                      <input type="email" defaultValue={user.email} onBlur={(event) => {
+                        if (event.target.value !== user.email) updateUser(user.id, { email: event.target.value });
+                      }} />
+                    </label>
+                    <label className="toggle-filter">
+                      <input type="checkbox" checked={user.active} onChange={(event) => updateUser(user.id, { active: event.target.checked })} />
+                      Aktiv
+                    </label>
+                    <small>{user.source === "iam" ? `IAM: ${user.externalId ?? "ohne externe ID"}` : "Lokaler Benutzer"}</small>
+                  </div>
+                ))}
+              </div>
+              <p className="settings-note">Die externe IAM-ID und Rollen können später ergänzt werden, ohne bestehende Zuordnungen über die Benutzer-ID zu ändern.</p>
+            </section>
+          )}
           {page === "settings" && (
             <section className="settings-section">
               <div className="section-heading">
@@ -792,6 +1027,28 @@ function App() {
                   ))}
                 </div>
               </div>
+              <div className="settings-panel mail-settings-panel">
+                <div className="section-heading">
+                  <div>
+                    <h2>Mailversand für Termine</h2>
+                    <p>Vorbereitung für einen späteren Mailhost. Aktuell wird kein Serverversand ausgeführt.</p>
+                  </div>
+                  <Mail size={22} aria-hidden="true" />
+                </div>
+                <form className="mail-settings-form" onSubmit={saveMailSettings}>
+                  <label className="toggle-filter"><input type="checkbox" checked={mailSettings.enabled} onChange={(event) => setMailSettings((current) => ({ ...current, enabled: event.target.checked }))} /> Mailversand später aktivieren</label>
+                  <div className="form-columns">
+                    <label>Mailhost<input value={mailSettings.host} onChange={(event) => setMailSettings((current) => ({ ...current, host: event.target.value }))} placeholder="smtp.example.org" /></label>
+                    <label>Port<input type="number" min="1" max="65535" value={mailSettings.port} onChange={(event) => setMailSettings((current) => ({ ...current, port: Number(event.target.value) }))} /></label>
+                  </div>
+                  <div className="form-columns">
+                    <label>Benutzername<input value={mailSettings.username} onChange={(event) => setMailSettings((current) => ({ ...current, username: event.target.value }))} /></label>
+                    <label>Absenderadresse<input type="email" value={mailSettings.fromAddress} onChange={(event) => setMailSettings((current) => ({ ...current, fromAddress: event.target.value }))} placeholder="inno@example.org" /></label>
+                  </div>
+                  <label className="toggle-filter"><input type="checkbox" checked={mailSettings.secure} onChange={(event) => setMailSettings((current) => ({ ...current, secure: event.target.checked }))} /> TLS/SSL verwenden</label>
+                  <button className="primary-button" type="submit">Mail-Einstellungen speichern</button>
+                </form>
+              </div>
             </section>
           )}
           {page === "events" && (
@@ -814,6 +1071,14 @@ function App() {
                       </select>
                     </label>
                     <div className="event-idea-chips">{event.ideaIds.length ? event.ideaIds.map((ideaId) => <span key={ideaId}>{ideas.find((idea) => idea.id === ideaId)?.title}</span>) : <small>Keine Ideen verknüpft</small>}</div>
+                    <button className="secondary-button event-invite-button" type="button" onClick={() => openEventInvite(event)}><Mail size={16} /> Einladung vorbereiten</button>
+                    {inviteEventId === event.id && <div className="event-invite-panel">
+                      <label>Empfänger (Komma getrennt)
+                        <input type="text" value={inviteRecipients} onChange={(inputEvent) => setInviteRecipients(inputEvent.target.value)} placeholder="name@example.org, team@example.org" />
+                      </label>
+                      <p>Öffnet einen Entwurf im lokalen Mailprogramm mit Termin, Projekt und verknüpften Ideen.</p>
+                      <button className="primary-button" type="button" disabled={!inviteRecipients.trim()} onClick={() => createEventMailto(event)}>Mailentwurf öffnen</button>
+                    </div>}
                   </article>;
                 })}
               </div>
@@ -923,6 +1188,24 @@ function App() {
                                 </span>
                               </div>
                               <label>
+                                Zugeordnete Benutzer
+                                <select
+                                  multiple
+                                  value={idea.userIds.map(String)}
+                                  onChange={(event) =>
+                                    updateIdea(idea.id, {
+                                      userIds: Array.from(event.target.selectedOptions, (option) => Number(option.value)),
+                                    })
+                                  }
+                                >
+                                  {users.map((user) => (
+                                    <option key={user.id} value={user.id} disabled={!user.active}>
+                                      {user.displayName}
+                                    </option>
+                                  ))}
+                                </select>
+                              </label>
+                              <label>
                                 Steuerungsgate
                                 <select
                                   value={idea.gateId}
@@ -993,7 +1276,13 @@ function App() {
                   <div>
                     <p className="eyebrow">Neu anlegen</p>
                     <h2 id="dialog-title">
-                      {form === "project" ? "Projekt anlegen" : "Idee anlegen"}
+                      {form === "project"
+                        ? "Projekt anlegen"
+                        : form === "event"
+                          ? "Termin anlegen"
+                          : form === "user"
+                            ? "Benutzer anlegen"
+                          : "Idee anlegen"}
                     </h2>
                   </div>
                   <button
@@ -1033,6 +1322,16 @@ function App() {
                       Nächster Schritt
                       <input name="nextStep" required />
                     </label>
+                    <label>
+                      Zugeordnete Benutzer
+                      <select name="userIds" multiple>
+                        {users.map((user) => (
+                          <option key={user.id} value={user.id} disabled={!user.active}>
+                            {user.displayName}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
                     <div className="form-actions">
                       <button
                         className="secondary-button"
@@ -1043,6 +1342,87 @@ function App() {
                       </button>
                       <button className="primary-button" type="submit">
                         Projekt erstellen
+                      </button>
+                    </div>
+                  </form>
+                ) : form === "event" ? (
+                  <form onSubmit={createEvent}>
+                    <label>
+                      Titel
+                      <input name="title" required />
+                    </label>
+                    <div className="form-columns">
+                      <label>
+                        Datum
+                        <input name="date" type="date" required />
+                      </label>
+                      <label>
+                        Zeit
+                        <input name="time" type="time" required />
+                      </label>
+                    </div>
+                    <label>
+                      Ort
+                      <input name="location" required />
+                    </label>
+                    <label>
+                      Terminart
+                      <select name="type" defaultValue="Workshop" required>
+                        <option>InnoBoard V</option>
+                        <option>Pfadfinder-Call</option>
+                        <option>Workshop</option>
+                      </select>
+                    </label>
+                    <label>
+                      Projektverknüpfung
+                      <select name="projectId" defaultValue="">
+                        <option value="">Kein Projekt</option>
+                        {projects.map((project) => (
+                          <option key={project.id} value={project.id}>
+                            {project.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      Ideenverknüpfung
+                      <select name="ideaIds" multiple>
+                        {ideas.map((idea) => (
+                          <option key={idea.id} value={idea.id}>
+                            {idea.title}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <div className="form-actions">
+                      <button className="secondary-button" type="button" onClick={() => setForm(null)}>
+                        Abbrechen
+                      </button>
+                      <button className="primary-button" type="submit">
+                        Termin erstellen
+                      </button>
+                    </div>
+                  </form>
+                ) : form === "user" ? (
+                  <form onSubmit={createUser}>
+                    <label>
+                      Name
+                      <input name="displayName" required />
+                    </label>
+                    <label>
+                      E-Mail
+                      <input name="email" type="email" />
+                    </label>
+                    <label>
+                      Externe IAM-ID (optional)
+                      <input name="externalId" placeholder="Wird später vom IAM geliefert" />
+                    </label>
+                    <div className="form-actions">
+                      <button className="secondary-button" type="button" onClick={() => setForm(null)}>
+                        Abbrechen
+                      </button>
+                      <button className="primary-button" type="submit">
+                        Benutzer erstellen
                       </button>
                     </div>
                   </form>
@@ -1083,6 +1463,16 @@ function App() {
                     <label>
                       Innovations-Business-Owner
                       <input name="businessOwner" />
+                    </label>
+                    <label>
+                      Zugeordnete Benutzer
+                      <select name="userIds" multiple>
+                        {users.map((user) => (
+                          <option key={user.id} value={user.id} disabled={!user.active}>
+                            {user.displayName}
+                          </option>
+                        ))}
+                      </select>
                     </label>
                     <label>
                       Innovationsstatus

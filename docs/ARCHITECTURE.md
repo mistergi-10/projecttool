@@ -64,11 +64,17 @@ Termine enthalten Datum, Uhrzeit, Ort und Typ. Ein Termin kann mehrere Ideen ver
 | Portal | `GET /api/portal` | Gesamtdaten fuer die Startansicht |
 | Projekte | `GET`, `POST`, `PATCH /api/projects` | Projekte anlegen und steuern |
 | Ideen | `GET`, `POST`, `PATCH /api/ideas` | Ideen und InnoV-Status pflegen |
+| Benutzer | `GET`, `POST`, `PATCH /api/users` | Lokales Benutzerverzeichnis mit vorbereiteter IAM-ID |
 | Aufgaben | `GET`, `POST`, `PATCH /api/tasks` | Projektaufgaben und Faelligkeiten |
 | Vorlagen | `GET`, `POST`, `PATCH /api/task-templates` | Standard-Taskliste administrieren |
 | Termine | `GET`, `PATCH /api/events` | Termine und Ideenverknuepfungen |
 | Erinnerungen | `GET /api/reminders` | Offene Aufgaben und Gates nach Faelligkeit |
 | Kataloge | `GET /api/project-statuses`, `/api/idea-stages`, `/api/gates`, `/api/implementation-paths` | Konfigurations- und Prozessdaten |
+| Mail-Einstellungen | `GET`, `PATCH /api/settings/mail` | Mailhost, Port, Absender und TLS für einen späteren Versand |
+
+Termine können aus der Oberfläche als Einladung für das lokale Mailprogramm vorbereitet werden. Der Entwurf enthält Termin, verknüpfte Projekte und Ideen. Ein SMTP- oder anderer Serverversand ist noch nicht angebunden; die Mail-Einstellungen dienen als vorbereitete Konfiguration.
+
+Projekte und Ideen besitzen zunächst direkte `userIds`-Zuordnungen. Die Benutzerobjekte führen zusätzlich `source` und `externalId`, damit ein späterer Abgleich mit einem IAM-System die stabilen internen Zuordnungen weiterverwenden kann. Rollen und Berechtigungen sind bewusst noch nicht Bestandteil des ersten Wurfs.
 
 ## Datenhaltung
 

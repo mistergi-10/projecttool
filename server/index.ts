@@ -29,6 +29,26 @@ type Idea = {
   gateId: string
   gateStatus: 'open' | 'passed' | 'not-required'
   gateDueDate: string
+  userIds: number[]
+}
+
+type Project = {
+  id: number
+  name: string
+  client: string
+  primaryStatusId: string
+  progress: number
+  nextStep: string
+  userIds: number[]
+}
+
+type User = {
+  id: number
+  displayName: string
+  email: string
+  active: boolean
+  externalId: string | null
+  source: 'local' | 'iam'
 }
 
 type ImplementationPath = {
@@ -70,6 +90,15 @@ type CalendarEvent = {
   ideaIds: number[]
 }
 
+type MailSettings = {
+  enabled: boolean
+  host: string
+  port: number
+  username: string
+  fromAddress: string
+  secure: boolean
+}
+
 const projectStatuses: ProjectStatus[] = [
   { id: 'planned', label: 'Geplant', color: '#7b8b83', order: 1 },
   { id: 'active', label: 'In Bearbeitung', color: '#236052', order: 2 },
@@ -105,22 +134,29 @@ const gates: Gate[] = [
   { id: 'gate-3', label: 'InnoBoard Gate 3', phaseId: 'evolve', description: 'Abschluss von Evolve und Übergang zur Implementierung freigeben.' },
 ]
 
+const users: User[] = [
+  { id: 1, displayName: 'David Gianini', email: '', active: true, externalId: null, source: 'local' },
+  { id: 2, displayName: 'Andrea Mai', email: '', active: true, externalId: null, source: 'local' },
+  { id: 3, displayName: 'Nathalie Burkhalter', email: '', active: true, externalId: null, source: 'local' },
+  { id: 4, displayName: 'Prisca Spychiger', email: '', active: true, externalId: null, source: 'local' },
+]
+
 const taskTemplates: TaskTemplate[] = [
   { id: 1, title: 'APLAN abgesprochen', active: true, defaultDueInDays: 7 },
   { id: 2, title: 'IKT V abgesprochen', active: true, defaultDueInDays: 14 },
 ]
 
-const projects = [
-  { id: 1, name: 'Drohnenlagebild 2030', client: 'Kommando Einsatzunterstützung', primaryStatusId: 'active', progress: 64, nextStep: 'Feldversuch vorbereiten' },
-  { id: 2, name: 'Mobiler Sanitätsassistent', client: 'Ausbildungszentrum Sanität', primaryStatusId: 'active', progress: 42, nextStep: 'MVP-Abnahme planen' },
-  { id: 3, name: 'Resiliente Feldlogistik', client: 'Logistikbasis Nord', primaryStatusId: 'planned', progress: 27, nextStep: 'Nutzerinterviews terminieren' },
+const projects: Project[] = [
+  { id: 1, name: 'Drohnenlagebild 2030', client: 'Kommando Einsatzunterstützung', primaryStatusId: 'active', progress: 64, nextStep: 'Feldversuch vorbereiten', userIds: [] },
+  { id: 2, name: 'Mobiler Sanitätsassistent', client: 'Ausbildungszentrum Sanität', primaryStatusId: 'active', progress: 42, nextStep: 'MVP-Abnahme planen', userIds: [] },
+  { id: 3, name: 'Resiliente Feldlogistik', client: 'Logistikbasis Nord', primaryStatusId: 'planned', progress: 27, nextStep: 'Nutzerinterviews terminieren', userIds: [] },
 ]
 
 const ideas: Idea[] = [
-  { id: 1, projectId: 1, title: 'Mobiles Lagebild für Kleindrohnen', secondaryStatusId: 'experiment', problemStatement: 'Einsatzkräfte erhalten Lageinformationen von Kleindrohnen nicht zeitgerecht und einheitlich.', submitter: 'Hptm M. Keller', ideaOwner: 'Hptm M. Keller', businessOwner: 'Oberst L. Hofmann', implementationPathId: 'innovation-unit', gateId: 'gate-2', gateStatus: 'open', gateDueDate: '2026-09-18' },
-  { id: 2, projectId: 1, title: 'Autonome Startplatzprüfung', secondaryStatusId: 'validate', problemStatement: 'Drohnencrews benötigen eine rasche und sichere Beurteilung möglicher Startplätze.', submitter: 'Oblt S. Meier', ideaOwner: 'Oblt S. Meier', businessOwner: 'Oberst L. Hofmann', implementationPathId: 'drones', gateId: 'pathfinder-call', gateStatus: 'open', gateDueDate: '2026-09-12' },
-  { id: 3, projectId: 2, title: 'Triagehilfe im Einsatzraum', secondaryStatusId: 'evolve', problemStatement: 'Sanitätsteams benötigen unter Zeitdruck eine einheitliche digitale Triageunterstützung.', submitter: 'Dr. A. Kern', ideaOwner: 'Dr. A. Kern', businessOwner: 'Oberst P. Kern', implementationPathId: 'rio', gateId: 'gate-3', gateStatus: 'open', gateDueDate: '2026-09-25' },
-  { id: 4, projectId: 3, title: 'Materialfluss im Feld sichtbar machen', secondaryStatusId: 'ideate', problemStatement: 'Kritisches Material und Nachschub sind entlang der Feldlogistik nur eingeschränkt transparent.', submitter: 'Hptfw T. Berger', ideaOwner: 'Hptfw T. Berger', businessOwner: '', implementationPathId: '', gateId: 'quality-check', gateStatus: 'open', gateDueDate: '2026-09-15' },
+  { id: 1, projectId: 1, title: 'Mobiles Lagebild für Kleindrohnen', secondaryStatusId: 'experiment', problemStatement: 'Einsatzkräfte erhalten Lageinformationen von Kleindrohnen nicht zeitgerecht und einheitlich.', submitter: 'Hptm M. Keller', ideaOwner: 'Hptm M. Keller', businessOwner: 'Oberst L. Hofmann', implementationPathId: 'innovation-unit', gateId: 'gate-2', gateStatus: 'open', gateDueDate: '2026-09-18', userIds: [] },
+  { id: 2, projectId: 1, title: 'Autonome Startplatzprüfung', secondaryStatusId: 'validate', problemStatement: 'Drohnencrews benötigen eine rasche und sichere Beurteilung möglicher Startplätze.', submitter: 'Oblt S. Meier', ideaOwner: 'Oblt S. Meier', businessOwner: 'Oberst L. Hofmann', implementationPathId: 'drones', gateId: 'pathfinder-call', gateStatus: 'open', gateDueDate: '2026-09-12', userIds: [] },
+  { id: 3, projectId: 2, title: 'Triagehilfe im Einsatzraum', secondaryStatusId: 'evolve', problemStatement: 'Sanitätsteams benötigen unter Zeitdruck eine einheitliche digitale Triageunterstützung.', submitter: 'Dr. A. Kern', ideaOwner: 'Dr. A. Kern', businessOwner: 'Oberst P. Kern', implementationPathId: 'rio', gateId: 'gate-3', gateStatus: 'open', gateDueDate: '2026-09-25', userIds: [] },
+  { id: 4, projectId: 3, title: 'Materialfluss im Feld sichtbar machen', secondaryStatusId: 'ideate', problemStatement: 'Kritisches Material und Nachschub sind entlang der Feldlogistik nur eingeschränkt transparent.', submitter: 'Hptfw T. Berger', ideaOwner: 'Hptfw T. Berger', businessOwner: '', implementationPathId: '', gateId: 'quality-check', gateStatus: 'open', gateDueDate: '2026-09-15', userIds: [] },
 ]
 
 const projectTasks: ProjectTask[] = [
@@ -135,6 +171,15 @@ const calendarEvents: CalendarEvent[] = [
   { id: 3, title: 'InnoBoard V - 3. Sitzung', date: '2027-08-19', time: '09:00', location: 'Bern, Sitzungszimmer A', type: 'InnoBoard V', projectId: null, ideaIds: [3] },
   { id: 4, title: 'InnoBoard V - 4. Sitzung', date: '2027-11-18', time: '09:00', location: 'Bern, Sitzungszimmer A', type: 'InnoBoard V', projectId: null, ideaIds: [] },
 ]
+
+const mailSettings: MailSettings = {
+  enabled: false,
+  host: '',
+  port: 587,
+  username: '',
+  fromAddress: '',
+  secure: true,
+}
 
 const dueDateAfter = (days: number) => {
   const date = new Date()
@@ -153,9 +198,12 @@ const reminders = () => [
 
 const app = express()
 const rootDirectory = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+const normalizeUserIds = (value: unknown) => Array.isArray(value) ? [...new Set(value.map(Number))] : []
+const validUserIds = (userIds: number[]) => userIds.every((userId) => Number.isInteger(userId) && users.some((user) => user.id === userId))
 
 app.use(express.json())
 app.get('/api/health', (_request, response) => response.json({ status: 'ok' }))
+app.get('/api/users', (_request, response) => response.json(users))
 app.get('/api/projects', (_request, response) => response.json(projects))
 app.get('/api/project-statuses', (_request, response) => response.json(projectStatuses))
 app.get('/api/idea-stages', (_request, response) => response.json(ideaStages))
@@ -168,18 +216,48 @@ app.get('/api/tasks', (request, response) => {
 })
 app.get('/api/reminders', (_request, response) => response.json(reminders()))
 app.get('/api/events', (_request, response) => response.json(calendarEvents))
+app.get('/api/settings/mail', (_request, response) => response.json(mailSettings))
 app.get('/api/ideas', (request, response) => {
   const projectId = Number(request.query.projectId)
   response.json(Number.isFinite(projectId) ? ideas.filter((idea) => idea.projectId === projectId) : ideas)
 })
-app.get('/api/portal', (_request, response) => response.json({ projects, projectStatuses, ideas, ideaStages, implementationPaths, gates, taskTemplates, projectTasks }))
+app.get('/api/portal', (_request, response) => response.json({ projects, projectStatuses, ideas, ideaStages, implementationPaths, gates, taskTemplates, projectTasks, users }))
+app.post('/api/users', (request, response) => {
+  const { displayName, email, externalId, source } = request.body as Partial<User>
+  if (!displayName?.trim()) {
+    response.status(400).json({ error: 'Der Anzeigename ist erforderlich.' })
+    return
+  }
+  const user: User = { id: users.length + 1, displayName: displayName.trim(), email: email?.trim() ?? '', active: true, externalId: externalId?.trim() || null, source: source === 'iam' ? 'iam' : 'local' }
+  users.push(user)
+  response.status(201).json(user)
+})
+app.patch('/api/users/:id', (request, response) => {
+  const user = users.find((item) => item.id === Number(request.params.id))
+  if (!user) {
+    response.status(404).json({ error: 'Benutzer nicht gefunden.' })
+    return
+  }
+  const update = request.body as Partial<User>
+  if (update.displayName !== undefined && !update.displayName.trim()) {
+    response.status(400).json({ error: 'Der Anzeigename darf nicht leer sein.' })
+    return
+  }
+  Object.assign(user, update)
+  response.json(user)
+})
 app.post('/api/projects', (request, response) => {
-  const { name, client, primaryStatusId, nextStep } = request.body as Partial<(typeof projects)[number]>
+  const { name, client, primaryStatusId, nextStep, userIds: rawUserIds } = request.body as Partial<Project>
+  const userIds = normalizeUserIds(rawUserIds)
   if (!name || !client || !primaryStatusId || !nextStep || !projectStatuses.some((status) => status.id === primaryStatusId)) {
     response.status(400).json({ error: 'Projektname, Organisation, Projektstatus und naechster Schritt sind erforderlich.' })
     return
   }
-  const project = { id: projects.length + 1, name, client, primaryStatusId, progress: 0, nextStep }
+  if (!validUserIds(userIds)) {
+    response.status(400).json({ error: 'Die zugeordneten Benutzer sind ungültig.' })
+    return
+  }
+  const project: Project = { id: projects.length + 1, name, client, primaryStatusId, progress: 0, nextStep, userIds }
   projects.push(project)
   taskTemplates.filter((template) => template.active).forEach((template) => {
     projectTasks.push({ id: projectTasks.length + 1, projectId: project.id, title: template.title, completed: false, templateId: template.id, dueDate: dueDateAfter(template.defaultDueInDays) })
@@ -208,14 +286,39 @@ app.post('/api/task-templates', (request, response) => {
   response.status(201).json(template)
 })
 app.post('/api/ideas', (request, response) => {
-  const { projectId, title, secondaryStatusId, problemStatement, submitter, ideaOwner, businessOwner, implementationPathId, gateId, gateStatus, gateDueDate } = request.body as Partial<Idea>
+  const { projectId, title, secondaryStatusId, problemStatement, submitter, ideaOwner, businessOwner, implementationPathId, gateId, gateStatus, gateDueDate, userIds: rawUserIds } = request.body as Partial<Idea>
+  const userIds = normalizeUserIds(rawUserIds)
   if (!projectId || !title || !secondaryStatusId || !problemStatement || !submitter || !ideaOwner || !projects.some((project) => project.id === projectId) || !ideaStages.some((stage) => stage.id === secondaryStatusId)) {
     response.status(400).json({ error: 'Projekt, Ideentitel, Problemstellung, Ideengeber, Ideenowner und Innovationsstatus sind erforderlich.' })
     return
   }
-  const idea = { id: ideas.length + 1, projectId, title, secondaryStatusId, problemStatement, submitter, ideaOwner, businessOwner: businessOwner ?? '', implementationPathId: implementationPathId ?? '', gateId: gateId ?? 'quality-check', gateStatus: gateStatus ?? 'open', gateDueDate: gateDueDate ?? '' } as Idea
+  if (!validUserIds(userIds)) {
+    response.status(400).json({ error: 'Die zugeordneten Benutzer sind ungültig.' })
+    return
+  }
+  const idea = { id: ideas.length + 1, projectId, title, secondaryStatusId, problemStatement, submitter, ideaOwner, businessOwner: businessOwner ?? '', implementationPathId: implementationPathId ?? '', gateId: gateId ?? 'quality-check', gateStatus: gateStatus ?? 'open', gateDueDate: gateDueDate ?? '', userIds } as Idea
   ideas.push(idea)
   response.status(201).json(idea)
+})
+app.post('/api/events', (request, response) => {
+  const { title, date, time, location, type, projectId, ideaIds } = request.body as Partial<CalendarEvent>
+  const normalizedProjectId = projectId === null || projectId === undefined || projectId === '' ? null : Number(projectId)
+  const normalizedIdeaIds = Array.isArray(ideaIds) ? ideaIds.map(Number) : []
+  if (!title?.trim() || !date || !time || !location?.trim() || !['InnoBoard V', 'Pfadfinder-Call', 'Workshop'].includes(type ?? '')) {
+    response.status(400).json({ error: 'Titel, Datum, Zeit, Ort und Terminart sind erforderlich.' })
+    return
+  }
+  if (normalizedProjectId !== null && (!Number.isInteger(normalizedProjectId) || !projects.some((project) => project.id === normalizedProjectId))) {
+    response.status(400).json({ error: 'Das verknüpfte Projekt ist ungültig.' })
+    return
+  }
+  if (normalizedIdeaIds.some((ideaId) => !Number.isInteger(ideaId) || !ideas.some((idea) => idea.id === ideaId))) {
+    response.status(400).json({ error: 'Die verknüpften Ideen sind ungültig.' })
+    return
+  }
+  const calendarEvent: CalendarEvent = { id: calendarEvents.length + 1, title: title.trim(), date, time, location: location.trim(), type: type as CalendarEvent['type'], projectId: normalizedProjectId, ideaIds: [...new Set(normalizedIdeaIds)] }
+  calendarEvents.push(calendarEvent)
+  response.status(201).json(calendarEvent)
 })
 app.patch('/api/projects/:id', (request, response) => {
   const project = projects.find((item) => item.id === Number(request.params.id))
@@ -244,6 +347,11 @@ app.patch('/api/projects/:id', (request, response) => {
     response.status(400).json({ error: 'Nächster Schritt darf nicht leer sein.' })
     return
   }
+  if (update.userIds !== undefined && (!Array.isArray(update.userIds) || !validUserIds(update.userIds))) {
+    response.status(400).json({ error: 'Die zugeordneten Benutzer sind ungültig.' })
+    return
+  }
+  if (update.userIds) update.userIds = normalizeUserIds(update.userIds)
   Object.assign(project, update)
   response.json(project)
 })
@@ -266,6 +374,11 @@ app.patch('/api/ideas/:id', (request, response) => {
     response.status(400).json({ error: 'Ungueltiges Gate.' })
     return
   }
+  if (update.userIds !== undefined && (!Array.isArray(update.userIds) || !validUserIds(update.userIds))) {
+    response.status(400).json({ error: 'Die zugeordneten Benutzer sind ungültig.' })
+    return
+  }
+  if (update.userIds) update.userIds = normalizeUserIds(update.userIds)
   Object.assign(idea, update)
   response.json(idea)
 })
@@ -282,6 +395,19 @@ app.patch('/api/events/:id', (request, response) => {
   }
   event.ideaIds = [...new Set(ideaIds)]
   response.json(event)
+})
+app.patch('/api/settings/mail', (request, response) => {
+  const update = request.body as Partial<MailSettings>
+  if (update.port !== undefined && (!Number.isInteger(update.port) || update.port < 1 || update.port > 65535)) {
+    response.status(400).json({ error: 'Der Mailport muss zwischen 1 und 65535 liegen.' })
+    return
+  }
+  if (update.fromAddress !== undefined && update.fromAddress && !update.fromAddress.includes('@')) {
+    response.status(400).json({ error: 'Die Absenderadresse ist ungültig.' })
+    return
+  }
+  Object.assign(mailSettings, update)
+  response.json(mailSettings)
 })
 app.patch('/api/tasks/:id', (request, response) => {
   const task = projectTasks.find((item) => item.id === Number(request.params.id))

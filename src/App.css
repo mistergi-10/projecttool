@@ -389,6 +389,9 @@ form label {
     14px "Segoe UI",
     sans-serif;
 }
+select[multiple] {
+  min-height: 86px;
+}
 .form-actions {
   display: flex;
   justify-content: flex-end;
@@ -875,6 +878,38 @@ form label {
   color: #7a8eaa;
   font: 12px "Segoe UI", sans-serif;
 }
+.event-invite-button {
+  justify-self: start;
+}
+.event-invite-panel {
+  display: grid;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid #dce6f5;
+}
+.event-invite-panel label,
+.mail-settings-form label {
+  display: grid;
+  gap: 6px;
+  color: #536a91;
+  font: 12px "Segoe UI", sans-serif;
+}
+.event-invite-panel input,
+.mail-settings-form input:not([type="checkbox"]) {
+  min-width: 0;
+  border: 1px solid #c5d7f0;
+  border-radius: 4px;
+  padding: 9px 10px;
+  color: #152a4d;
+  background: #fff;
+  font: 14px "Segoe UI", sans-serif;
+}
+.event-invite-panel p {
+  font-size: 12px;
+}
+.event-invite-panel .primary-button {
+  justify-self: start;
+}
 .event-type {
   display: inline-flex;
   align-items: center;
@@ -1150,6 +1185,62 @@ form label {
   background: #fff;
   border-radius: 6px;
 }
+.user-list {
+  max-width: 980px;
+  display: grid;
+  gap: 12px;
+}
+.user-row {
+  display: grid;
+  grid-template-columns: 38px minmax(150px, 1fr) minmax(180px, 1fr) auto minmax(120px, auto);
+  gap: 14px;
+  align-items: end;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #dce6f5;
+}
+.user-row label {
+  display: grid;
+  gap: 6px;
+  color: #536a91;
+  font: 12px "Segoe UI", sans-serif;
+}
+.user-row input:not([type="checkbox"]) {
+  min-width: 0;
+  border: 1px solid #c5d7f0;
+  border-radius: 4px;
+  padding: 9px 10px;
+  color: #152a4d;
+  background: #fff;
+  font: 14px "Segoe UI", sans-serif;
+}
+.user-avatar {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #d8eaff;
+  color: #1256a6;
+  font-weight: 700;
+}
+.user-row small,
+.settings-note {
+  color: #7184a4;
+  font: 12px "Segoe UI", sans-serif;
+}
+.settings-note {
+  margin-top: 12px;
+}
+.mail-settings-panel {
+  margin-top: 24px;
+}
+.mail-settings-panel > .section-heading {
+  align-items: start;
+}
+.mail-settings-form {
+  display: grid;
+  gap: 16px;
+}
 .template-list {
   display: grid;
   margin-top: 20px;
@@ -1176,6 +1267,13 @@ form label {
     grid-template-columns: 22px 1fr;
   }
   .template-row span {
+    grid-column: 2;
+  }
+  .user-row {
+    grid-template-columns: 38px 1fr;
+  }
+  .user-row label,
+  .user-row small {
     grid-column: 2;
   }
 }
