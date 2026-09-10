@@ -273,6 +273,15 @@ function App() {
   const selectedProject = projects.find(
     (project) => project.id === selectedProjectId,
   );
+  const phaseSignal = (stageId: string) => {
+    const stageIdeas = ideas.filter(
+      (idea) => idea.secondaryStatusId === stageId,
+    );
+    if (stageIdeas.length === 0) return "empty";
+    if (stageIdeas.some((idea) => idea.gateStatus === "open")) return "open";
+    if (stageIdeas.every((idea) => idea.gateStatus === "passed")) return "passed";
+    return "not-required";
+  };
   const openProjectForm = () => {
     setMessage("");
     setForm("project");
@@ -471,6 +480,15 @@ function App() {
               </div>
               {selectedProject && (
                 <div className="project-workbench">
+                  <ProjectCockpit
+                    ideas={ideas.filter(
+                      (idea) => idea.projectId === selectedProject.id,
+                    )}
+                    tasks={projectTasks.filter(
+                      (task) => task.projectId === selectedProject.id,
+                    )}
+                    ideaStages={ideaStages}
+                  />
                   <section className="project-editor">
                     <div>
                       <p className="eyebrow">Projektakte</p>
@@ -673,7 +691,13 @@ function App() {
               <div className="idea-board">
                 <div className="process-strip">
                   {ideaStages.map((stage) => (
-                    <span key={stage.id}>{stage.label.split(" - ")[0]}</span>
+                    <span
+                      className={`phase-label ${phaseSignal(stage.id)}`}
+                      key={stage.id}
+                    >
+                      <i aria-hidden="true" />
+                      {stage.label.split(" - ")[0]}
+                    </span>
                   ))}
                 </div>
                 <div className="idea-grid">
@@ -688,6 +712,7 @@ function App() {
                                 <Lightbulb size={19} />
                               </div>
                               <span className={`gate ${idea.gateStatus}`}>
+                                <i aria-hidden="true" />
                                 {gates.find((gate) => gate.id === idea.gateId)
                                   ?.label ?? "Gate offen"}
                               </span>
@@ -1072,6 +1097,48 @@ function ProjectTaskList({
           <Plus size={17} /> Aufgabe
         </button>
       </form>
+    </section>
+  );
+}
+
+function ProjectCockpit({
+  ideas,
+  tasks,
+  ideaStages,
+}: {
+  ideas: Idea[];
+  tasks: ProjectTask[];
+  ideaStages: IdeaStage[];
+}) {
+  const completedTasks = tasks.filter((task) => task.completed).length;
+  const passedGates = ideas.filter(
+    (idea) => idea.gateStatus === "passed",
+  ).length;
+  const reachedPhases = new Set(ideas.map((idea) => idea.secondaryStatusId))
+    .size;
+
+  return (
+    <section className="project-cockpit" aria-label="Projekt-Cockpit">
+      <div className="cockpit-intro">
+        <p className="eyebrow">Projekt-Cockpit</p>
+        <strong>Steuerungsübersicht</strong>
+      </div>
+      <div className="cockpit-metric">
+        <span>Ideen</span>
+        <strong>{ideas.length}</strong>
+      </div>
+      <div className="cockpit-metric">
+        <span>Phasen erreicht</span>
+        <strong>{reachedPhases}/{ideaStages.length}</strong>
+      </div>
+      <div className="cockpit-metric">
+        <span>Aufgaben erledigt</span>
+        <strong>{completedTasks}/{tasks.length}</strong>
+      </div>
+      <div className="cockpit-metric">
+        <span>Gates bestanden</span>
+        <strong>{passedGates}/{ideas.length}</strong>
+      </div>
     </section>
   );
 }

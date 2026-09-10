@@ -796,6 +796,81 @@ form label {
   outline: 2px solid #1765bd;
   outline-offset: 2px;
 }
+.phase-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+.phase-label i,
+.gate i {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #a7b9d1;
+}
+.phase-label.open i,
+.gate.open i {
+  background: #e5a12f;
+  box-shadow: 0 0 0 3px rgb(229 161 47 / 18%);
+}
+.phase-label.passed i,
+.gate.passed i {
+  background: #2b9b67;
+  box-shadow: 0 0 0 3px rgb(43 155 103 / 16%);
+}
+.phase-label.not-required i,
+.gate.not-required i {
+  background: #8795aa;
+}
+.gate {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.project-cockpit {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(180px, 1.4fr) repeat(4, minmax(115px, 1fr));
+  overflow: hidden;
+  border: 1px solid #bed7f5;
+  border-radius: 6px;
+  background: #ecf5ff;
+}
+.cockpit-intro,
+.cockpit-metric {
+  padding: 15px 18px;
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  border-right: 1px solid #c9def6;
+}
+.cockpit-intro strong {
+  color: #1d4f90;
+  font: 600 15px "Segoe UI", sans-serif;
+}
+.cockpit-metric span {
+  color: #5f789e;
+  font: 12px "Segoe UI", sans-serif;
+}
+.cockpit-metric strong {
+  color: #104f9d;
+  font-size: 21px;
+  font-weight: 600;
+}
+.cockpit-metric:last-child {
+  border-right: 0;
+}
+@media (max-width: 780px) {
+  .project-cockpit {
+    grid-template-columns: 1fr 1fr;
+  }
+  .cockpit-intro,
+  .cockpit-metric {
+    border-bottom: 1px solid #c9def6;
+  }
+}
 .project-tasks {
   grid-column: 1 / -1;
   padding: 23px;
