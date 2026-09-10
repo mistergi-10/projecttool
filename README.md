@@ -8,6 +8,12 @@ Ein Projekt ist der Fuehrungsrahmen und besitzt genau einen **primaeren Projekts
 
 Ein Projekt besitzt eine oder mehrere **Ideen**. Jede Idee hat einen **sekundaeren Ideenstatus** aus dem versionierten InnoV-Katalog (`/api/idea-stages`): `Ideate`, `Validate`, `Experiment`, `Evolve` und `Implement`. Damit bleiben operative Projektsteuerung und Innovationsfortschritt bewusst getrennt. Problemstellung, Ideen und Wissensstand bilden den Eingang des Prozesses und sind keine Ideenstati.
 
+## Innovationsakte
+
+Jede Idee wird als Innovationsakte geführt. Sie enthält die Problemstellung, Ideengeber, Ideenowner, Innovations-Business-Owner, Umsetzungspfad und den Entscheidungsstand des aktuellen Steuerungsgates. Abgebildet sind `Quality-Check`, `Quality-Call`, `Pfadfinder-Call` sowie `InnoBoard Gate 1` bis `3`.
+
+Die sieben Umsetzungspfade des Leitfadens sind als eigener Katalog verfügbar: ZUVA, Innovationseinheit (SI4), RIO, Innovationsprojekt DU CdA, Innovationsraum/Forschungsauftrag ar W+T, KVP und Komp Zen Drohnen und Robotik.
+
 Der Start-Endpunkt fuer die gesamte Oberfläche ist `/api/portal`. Einzelne Kataloge und Beziehungen sind zudem ueber `/api/projects`, `/api/ideas`, `/api/project-statuses` und `/api/idea-stages` abrufbar.
 
 ## Lokal starten

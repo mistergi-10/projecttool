@@ -13,8 +13,10 @@ type Project = {
 
 type ProjectStatus = { id: string; label: string }
 type IdeaStage = { id: string; label: string }
-type Idea = { id: number; projectId: number; title: string; secondaryStatusId: string }
-type PortalData = { projects: Project[]; projectStatuses: ProjectStatus[]; ideas: Idea[]; ideaStages: IdeaStage[] }
+type ImplementationPath = { id: string; label: string }
+type Gate = { id: string; label: string; phaseId: string; description: string }
+type Idea = { id: number; projectId: number; title: string; secondaryStatusId: string; problemStatement: string; submitter: string; ideaOwner: string; businessOwner: string; implementationPathId: string; gateId: string; gateStatus: 'open' | 'passed' | 'not-required' }
+type PortalData = { projects: Project[]; projectStatuses: ProjectStatus[]; ideas: Idea[]; ideaStages: IdeaStage[]; implementationPaths: ImplementationPath[]; gates: Gate[] }
 
 const initialProjects: Project[] = [
   { id: 1, name: 'Digitaler Empfang', client: 'Hofmann & Partner', primaryStatusId: 'active', progress: 64, nextStep: 'Workshop vorbereiten' },
@@ -32,6 +34,8 @@ function App() {
   const [projectStatuses, setProjectStatuses] = useState<ProjectStatus[]>(initialStatuses)
   const [ideas, setIdeas] = useState<Idea[]>([])
   const [ideaStages, setIdeaStages] = useState<IdeaStage[]>([])
+  const [implementationPaths, setImplementationPaths] = useState<ImplementationPath[]>([])
+  const [gates, setGates] = useState<Gate[]>([])
   const [apiAvailable, setApiAvailable] = useState(false)
   const [page, setPage] = useState<'overview' | 'projects' | 'ideas'>('overview')
   const [form, setForm] = useState<'project' | 'idea' | null>(null)
@@ -45,6 +49,8 @@ function App() {
         setProjectStatuses(data.projectStatuses)
         setIdeas(data.ideas)
         setIdeaStages(data.ideaStages)
+        setImplementationPaths(data.implementationPaths)
+        setGates(data.gates)
         setApiAvailable(true)
       })
       .catch(() => setApiAvailable(false))
@@ -57,9 +63,9 @@ function App() {
     setProjects((current) => current.map((project) => project.id === updated.id ? updated : project))
   }
 
-  const updateIdeaStatus = async (ideaId: number, secondaryStatusId: string) => {
-    const response = await fetch(`/api/ideas/${ideaId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ secondaryStatusId }) })
-    if (!response.ok) return setMessage('Der Ideenstatus konnte nicht gespeichert werden.')
+  const updateIdea = async (ideaId: number, update: Partial<Idea>) => {
+    const response = await fetch(`/api/ideas/${ideaId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(update) })
+    if (!response.ok) return setMessage('Die Ideenakte konnte nicht gespeichert werden.')
     const updated = await response.json() as Idea
     setIdeas((current) => current.map((idea) => idea.id === updated.id ? updated : idea))
   }
@@ -126,11 +132,11 @@ function App() {
           {page === 'projects' && <section className="projects-section"><div className="section-heading"><div><h2>Alle Projekte</h2><p>Projektstatus steuern und zugeordnete Ideen überblicken.</p></div></div><div className="project-list">
               {projects.map((project) => <ProjectRow key={project.id} project={project} projectStatuses={projectStatuses} ideas={ideas} editable updateProjectStatus={updateProjectStatus} />)}
             </div></section>}
-          {page === 'ideas' && <section className="ideas-section"><div className="section-heading"><div><h2>Ideenportfolio</h2><p>Der sekundäre Status folgt dem Innovationsprozess.</p></div><button className="secondary-button" type="button" onClick={openIdeaForm}><Plus size={17} /> Idee anlegen</button></div><div className="idea-grid">
-            {ideas.map((idea) => <article className="idea-card" key={idea.id}><div className="idea-icon"><Lightbulb size={19} /></div><p>{projectName(idea.projectId)}</p><h3>{idea.title}</h3><label>Innovationsstatus<select value={idea.secondaryStatusId} onChange={(event) => updateIdeaStatus(idea.id, event.target.value)}>{ideaStages.map((stage) => <option key={stage.id} value={stage.id}>{stage.label}</option>)}</select></label></article>)}
+          {page === 'ideas' && <section className="ideas-section"><div className="section-heading"><div><h2>Innovationsportfolio</h2><p>Bedarf, Rollen, Umsetzungspfad und Gate an einer Stelle steuern.</p></div><button className="secondary-button" type="button" onClick={openIdeaForm}><Plus size={17} /> Idee anlegen</button></div><div className="process-strip">{ideaStages.map((stage) => <span key={stage.id}>{stage.label.split(' - ')[0]}</span>)}</div><div className="idea-grid">
+            {ideas.map((idea) => <article className="idea-card" key={idea.id}><div className="idea-card-head"><div className="idea-icon"><Lightbulb size={19} /></div><span className={`gate ${idea.gateStatus}`}>{gates.find((gate) => gate.id === idea.gateId)?.label ?? 'Gate offen'}</span></div><p>{projectName(idea.projectId)}</p><h3>{idea.title}</h3><p className="problem">{idea.problemStatement}</p><div className="idea-fields"><label>Phase<select value={idea.secondaryStatusId} onChange={(event) => updateIdea(idea.id, { secondaryStatusId: event.target.value })}>{ideaStages.map((stage) => <option key={stage.id} value={stage.id}>{stage.label}</option>)}</select></label><label>Umsetzungspfad<select value={idea.implementationPathId} onChange={(event) => updateIdea(idea.id, { implementationPathId: event.target.value })}><option value="">Noch offen</option>{implementationPaths.map((path) => <option key={path.id} value={path.id}>{path.label}</option>)}</select></label><div className="role-line"><span>Ideenowner <strong>{idea.ideaOwner}</strong></span><span>Business-Owner <strong>{idea.businessOwner || 'Noch offen'}</strong></span></div><label>Steuerungsgate<select value={idea.gateId} onChange={(event) => updateIdea(idea.id, { gateId: event.target.value })}>{gates.map((gate) => <option key={gate.id} value={gate.id}>{gate.label}</option>)}</select></label><label>Gate-Entscheid<select value={idea.gateStatus} onChange={(event) => updateIdea(idea.id, { gateStatus: event.target.value as Idea['gateStatus'] })}><option value="open">Offen</option><option value="passed">Bestanden</option><option value="not-required">Nicht erforderlich</option></select></label></div></article>)}
           </div></section>}
           {form && <div className="dialog-backdrop" role="presentation"><section className="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title"><div className="dialog-header"><div><p className="eyebrow">Neu anlegen</p><h2 id="dialog-title">{form === 'project' ? 'Projekt anlegen' : 'Idee anlegen'}</h2></div><button className="icon-button" type="button" aria-label="Dialog schließen" onClick={() => setForm(null)}><X size={19} /></button></div>
-            {form === 'project' ? <form onSubmit={createProject}><label>Projektname<input name="name" required /></label><label>Organisation<input name="client" required /></label><label>Projektstatus<select name="primaryStatusId" defaultValue={projectStatuses[0]?.id} required>{projectStatuses.map((status) => <option key={status.id} value={status.id}>{status.label}</option>)}</select></label><label>Nächster Schritt<input name="nextStep" required /></label><div className="form-actions"><button className="secondary-button" type="button" onClick={() => setForm(null)}>Abbrechen</button><button className="primary-button" type="submit">Projekt erstellen</button></div></form> : <form onSubmit={createIdea}><label>Projekt<select name="projectId" required>{projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}</select></label><label>Ideentitel<input name="title" required /></label><label>Innovationsstatus<select name="secondaryStatusId" defaultValue={ideaStages[0]?.id} required>{ideaStages.map((stage) => <option key={stage.id} value={stage.id}>{stage.label}</option>)}</select></label><div className="form-actions"><button className="secondary-button" type="button" onClick={() => setForm(null)}>Abbrechen</button><button className="primary-button" type="submit">Idee erstellen</button></div></form>}</section></div>}
+            {form === 'project' ? <form onSubmit={createProject}><label>Projektname<input name="name" required /></label><label>Organisation<input name="client" required /></label><label>Projektstatus<select name="primaryStatusId" defaultValue={projectStatuses[0]?.id} required>{projectStatuses.map((status) => <option key={status.id} value={status.id}>{status.label}</option>)}</select></label><label>Nächster Schritt<input name="nextStep" required /></label><div className="form-actions"><button className="secondary-button" type="button" onClick={() => setForm(null)}>Abbrechen</button><button className="primary-button" type="submit">Projekt erstellen</button></div></form> : <form onSubmit={createIdea}><label>Projekt<select name="projectId" required>{projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}</select></label><label>Ideentitel<input name="title" required /></label><label>Problemstellung<textarea name="problemStatement" required /></label><div className="form-columns"><label>Ideengeber<input name="submitter" required /></label><label>Ideenowner<input name="ideaOwner" required /></label></div><label>Innovations-Business-Owner<input name="businessOwner" /></label><label>Innovationsstatus<select name="secondaryStatusId" defaultValue={ideaStages[0]?.id} required>{ideaStages.map((stage) => <option key={stage.id} value={stage.id}>{stage.label}</option>)}</select></label><label>Umsetzungspfad<select name="implementationPathId" defaultValue=""><option value="">Noch offen</option>{implementationPaths.map((path) => <option key={path.id} value={path.id}>{path.label}</option>)}</select></label><label>Steuerungsgate<select name="gateId" defaultValue={gates[0]?.id}>{gates.map((gate) => <option key={gate.id} value={gate.id}>{gate.label}</option>)}</select></label><input name="gateStatus" type="hidden" value="open" /><div className="form-actions"><button className="secondary-button" type="button" onClick={() => setForm(null)}>Abbrechen</button><button className="primary-button" type="submit">Idee erstellen</button></div></form>}</section></div>}
         </div>
       </section>
     </main>

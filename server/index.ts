@@ -21,6 +21,25 @@ type Idea = {
   projectId: number
   title: string
   secondaryStatusId: string
+  problemStatement: string
+  submitter: string
+  ideaOwner: string
+  businessOwner: string
+  implementationPathId: string
+  gateId: string
+  gateStatus: 'open' | 'passed' | 'not-required'
+}
+
+type ImplementationPath = {
+  id: string
+  label: string
+}
+
+type Gate = {
+  id: string
+  label: string
+  phaseId: string
+  description: string
 }
 
 const projectStatuses: ProjectStatus[] = [
@@ -39,6 +58,25 @@ const ideaStages: IdeaStage[] = [
   { id: 'implement', label: 'Implement - flächendeckend ausrollen', order: 5, framework: 'InnoV v1.0' },
 ]
 
+const implementationPaths: ImplementationPath[] = [
+  { id: 'zuva', label: 'Beschaffungsprojekt nach ZUVA' },
+  { id: 'innovation-unit', label: 'Umsetzung über Innovationseinheit (SI4)' },
+  { id: 'rio', label: 'Umsetzung über RIO (RUAG)' },
+  { id: 'decentralized', label: 'Innovationsprojekt DU CdA' },
+  { id: 'research', label: 'Innovationsraum und Forschungsauftrag ar W+T' },
+  { id: 'kvp', label: 'Ablauf-Verbesserung nach KVP' },
+  { id: 'drones', label: 'Umsetzungspfad Komp Zen Drohnen und Robotik' },
+]
+
+const gates: Gate[] = [
+  { id: 'quality-check', label: 'Quality-Check', phaseId: 'ideate', description: 'Problem verständlich beschreiben und lösenswerte Fragestellung sicherstellen.' },
+  { id: 'quality-call', label: 'Quality-Call', phaseId: 'ideate', description: 'Geschärftes Problem, Nutzergruppen und erste Lösungsmöglichkeiten abstimmen.' },
+  { id: 'pathfinder-call', label: 'Pfadfinder-Call', phaseId: 'validate', description: 'Umsetzungspfad und Innovations-Business-Owner bestimmen.' },
+  { id: 'gate-1', label: 'InnoBoard Gate 1', phaseId: 'validate', description: 'Ressourcen für Experiment beurteilen und freigeben.' },
+  { id: 'gate-2', label: 'InnoBoard Gate 2', phaseId: 'experiment', description: 'Ergebnisse des Experiments und Mittel für Evolve beurteilen.' },
+  { id: 'gate-3', label: 'InnoBoard Gate 3', phaseId: 'evolve', description: 'Abschluss von Evolve und Übergang zur Implementierung freigeben.' },
+]
+
 const projects = [
   { id: 1, name: 'Digitaler Empfang', client: 'Hofmann & Partner', primaryStatusId: 'active', progress: 64, nextStep: 'Workshop vorbereiten' },
   { id: 2, name: 'CRM-Neustart', client: 'Kernwerk GmbH', primaryStatusId: 'active', progress: 42, nextStep: 'Abnahme planen' },
@@ -46,10 +84,10 @@ const projects = [
 ]
 
 const ideas: Idea[] = [
-  { id: 1, projectId: 1, title: 'Digitale Besuchsanmeldung', secondaryStatusId: 'experiment' },
-  { id: 2, projectId: 1, title: 'Selbstbedienungs-Terminal', secondaryStatusId: 'validate' },
-  { id: 3, projectId: 2, title: 'Gemeinsame Kundensicht', secondaryStatusId: 'evolve' },
-  { id: 4, projectId: 3, title: 'Prozesswissen sichtbar machen', secondaryStatusId: 'ideate' },
+  { id: 1, projectId: 1, title: 'Digitale Besuchsanmeldung', secondaryStatusId: 'experiment', problemStatement: 'Besuchende warten am Empfang und erhalten uneinheitliche Informationen.', submitter: 'M. Keller', ideaOwner: 'M. Keller', businessOwner: 'L. Hofmann', implementationPathId: 'innovation-unit', gateId: 'gate-2', gateStatus: 'open' },
+  { id: 2, projectId: 1, title: 'Selbstbedienungs-Terminal', secondaryStatusId: 'validate', problemStatement: 'Wiederkehrende Besuchende benötigen einen schnelleren, barrierearmen Zugang.', submitter: 'S. Meier', ideaOwner: 'S. Meier', businessOwner: 'L. Hofmann', implementationPathId: 'decentralized', gateId: 'pathfinder-call', gateStatus: 'open' },
+  { id: 3, projectId: 2, title: 'Gemeinsame Kundensicht', secondaryStatusId: 'evolve', problemStatement: 'Beratungsteams sehen relevante Kundeninformationen nicht einheitlich.', submitter: 'A. Kern', ideaOwner: 'A. Kern', businessOwner: 'P. Kern', implementationPathId: 'rio', gateId: 'gate-3', gateStatus: 'open' },
+  { id: 4, projectId: 3, title: 'Prozesswissen sichtbar machen', secondaryStatusId: 'ideate', problemStatement: 'Wissen über kritische Prozessschritte ist nur bei einzelnen Personen vorhanden.', submitter: 'T. Berger', ideaOwner: 'T. Berger', businessOwner: '', implementationPathId: '', gateId: 'quality-check', gateStatus: 'open' },
 ]
 
 const app = express()
@@ -60,11 +98,13 @@ app.get('/api/health', (_request, response) => response.json({ status: 'ok' }))
 app.get('/api/projects', (_request, response) => response.json(projects))
 app.get('/api/project-statuses', (_request, response) => response.json(projectStatuses))
 app.get('/api/idea-stages', (_request, response) => response.json(ideaStages))
+app.get('/api/implementation-paths', (_request, response) => response.json(implementationPaths))
+app.get('/api/gates', (_request, response) => response.json(gates))
 app.get('/api/ideas', (request, response) => {
   const projectId = Number(request.query.projectId)
   response.json(Number.isFinite(projectId) ? ideas.filter((idea) => idea.projectId === projectId) : ideas)
 })
-app.get('/api/portal', (_request, response) => response.json({ projects, projectStatuses, ideas, ideaStages }))
+app.get('/api/portal', (_request, response) => response.json({ projects, projectStatuses, ideas, ideaStages, implementationPaths, gates }))
 app.post('/api/projects', (request, response) => {
   const { name, client, primaryStatusId, nextStep } = request.body as Partial<(typeof projects)[number]>
   if (!name || !client || !primaryStatusId || !nextStep || !projectStatuses.some((status) => status.id === primaryStatusId)) {
@@ -76,12 +116,12 @@ app.post('/api/projects', (request, response) => {
   response.status(201).json(project)
 })
 app.post('/api/ideas', (request, response) => {
-  const { projectId, title, secondaryStatusId } = request.body as Partial<Idea>
-  if (!projectId || !title || !secondaryStatusId || !projects.some((project) => project.id === projectId) || !ideaStages.some((stage) => stage.id === secondaryStatusId)) {
-    response.status(400).json({ error: 'Projekt, Ideentitel und Innovationsstatus sind erforderlich.' })
+  const { projectId, title, secondaryStatusId, problemStatement, submitter, ideaOwner, businessOwner, implementationPathId, gateId, gateStatus } = request.body as Partial<Idea>
+  if (!projectId || !title || !secondaryStatusId || !problemStatement || !submitter || !ideaOwner || !projects.some((project) => project.id === projectId) || !ideaStages.some((stage) => stage.id === secondaryStatusId)) {
+    response.status(400).json({ error: 'Projekt, Ideentitel, Problemstellung, Ideengeber, Ideenowner und Innovationsstatus sind erforderlich.' })
     return
   }
-  const idea = { id: ideas.length + 1, projectId, title, secondaryStatusId }
+  const idea = { id: ideas.length + 1, projectId, title, secondaryStatusId, problemStatement, submitter, ideaOwner, businessOwner: businessOwner ?? '', implementationPathId: implementationPathId ?? '', gateId: gateId ?? 'quality-check', gateStatus: gateStatus ?? 'open' } as Idea
   ideas.push(idea)
   response.status(201).json(idea)
 })
@@ -101,16 +141,24 @@ app.patch('/api/projects/:id', (request, response) => {
 })
 app.patch('/api/ideas/:id', (request, response) => {
   const idea = ideas.find((item) => item.id === Number(request.params.id))
-  const secondaryStatusId = request.body.secondaryStatusId as string | undefined
   if (!idea) {
     response.status(404).json({ error: 'Idee nicht gefunden.' })
     return
   }
-  if (!secondaryStatusId || !ideaStages.some((stage) => stage.id === secondaryStatusId)) {
+  const update = request.body as Partial<Idea>
+  if (update.secondaryStatusId && !ideaStages.some((stage) => stage.id === update.secondaryStatusId)) {
     response.status(400).json({ error: 'Ungueltiger Innovationsstatus.' })
     return
   }
-  idea.secondaryStatusId = secondaryStatusId
+  if (update.implementationPathId && !implementationPaths.some((path) => path.id === update.implementationPathId)) {
+    response.status(400).json({ error: 'Ungueltiger Umsetzungspfad.' })
+    return
+  }
+  if (update.gateId && !gates.some((gate) => gate.id === update.gateId)) {
+    response.status(400).json({ error: 'Ungueltiges Gate.' })
+    return
+  }
+  Object.assign(idea, update)
   response.json(idea)
 })
 app.post('/api/project-statuses', (request, response) => {
