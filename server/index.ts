@@ -30,12 +30,13 @@ const projectStatuses: ProjectStatus[] = [
   { id: 'completed', label: 'Abgeschlossen', color: '#476d5d', order: 4 },
 ]
 
-// Entries are versioned so the wording can be transcribed exactly from the supplied guide.
+// Secondary idea statuses follow the InnoV innovation process supplied by the user.
 const ideaStages: IdeaStage[] = [
-  { id: 'capture', label: 'Idee erfassen', order: 1, framework: 'InnoV v1.0 - vorlaeufige Zuordnung' },
-  { id: 'assess', label: 'Idee bewerten', order: 2, framework: 'InnoV v1.0 - vorlaeufige Zuordnung' },
-  { id: 'develop', label: 'Loesung entwickeln', order: 3, framework: 'InnoV v1.0 - vorlaeufige Zuordnung' },
-  { id: 'transition', label: 'Uebergabe entscheiden', order: 4, framework: 'InnoV v1.0 - vorlaeufige Zuordnung' },
+  { id: 'ideate', label: 'Ideate - Ideen generieren & qualifizieren', order: 1, framework: 'InnoV v1.0' },
+  { id: 'validate', label: 'Validate - Testen, überprüfen, Umsetzung planen', order: 2, framework: 'InnoV v1.0' },
+  { id: 'experiment', label: 'Experiment - Versuch als MVP umsetzen', order: 3, framework: 'InnoV v1.0' },
+  { id: 'evolve', label: 'Evolve - Anfangsplanung für Skalierung & Folgen', order: 4, framework: 'InnoV v1.0' },
+  { id: 'implement', label: 'Implement - flächendeckend ausrollen', order: 5, framework: 'InnoV v1.0' },
 ]
 
 const projects = [
@@ -45,10 +46,10 @@ const projects = [
 ]
 
 const ideas: Idea[] = [
-  { id: 1, projectId: 1, title: 'Digitale Besuchsanmeldung', secondaryStatusId: 'develop' },
-  { id: 2, projectId: 1, title: 'Selbstbedienungs-Terminal', secondaryStatusId: 'assess' },
-  { id: 3, projectId: 2, title: 'Gemeinsame Kundensicht', secondaryStatusId: 'transition' },
-  { id: 4, projectId: 3, title: 'Prozesswissen sichtbar machen', secondaryStatusId: 'capture' },
+  { id: 1, projectId: 1, title: 'Digitale Besuchsanmeldung', secondaryStatusId: 'experiment' },
+  { id: 2, projectId: 1, title: 'Selbstbedienungs-Terminal', secondaryStatusId: 'validate' },
+  { id: 3, projectId: 2, title: 'Gemeinsame Kundensicht', secondaryStatusId: 'evolve' },
+  { id: 4, projectId: 3, title: 'Prozesswissen sichtbar machen', secondaryStatusId: 'ideate' },
 ]
 
 const app = express()
