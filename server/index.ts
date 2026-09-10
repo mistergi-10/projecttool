@@ -42,6 +42,20 @@ type Gate = {
   description: string
 }
 
+type TaskTemplate = {
+  id: number
+  title: string
+  active: boolean
+}
+
+type ProjectTask = {
+  id: number
+  projectId: number
+  title: string
+  completed: boolean
+  templateId: number | null
+}
+
 const projectStatuses: ProjectStatus[] = [
   { id: 'planned', label: 'Geplant', color: '#7b8b83', order: 1 },
   { id: 'active', label: 'In Bearbeitung', color: '#236052', order: 2 },
@@ -77,6 +91,11 @@ const gates: Gate[] = [
   { id: 'gate-3', label: 'InnoBoard Gate 3', phaseId: 'evolve', description: 'Abschluss von Evolve und Übergang zur Implementierung freigeben.' },
 ]
 
+const taskTemplates: TaskTemplate[] = [
+  { id: 1, title: 'APLAN abgesprochen', active: true },
+  { id: 2, title: 'IKT V abgesprochen', active: true },
+]
+
 const projects = [
   { id: 1, name: 'Digitaler Empfang', client: 'Hofmann & Partner', primaryStatusId: 'active', progress: 64, nextStep: 'Workshop vorbereiten' },
   { id: 2, name: 'CRM-Neustart', client: 'Kernwerk GmbH', primaryStatusId: 'active', progress: 42, nextStep: 'Abnahme planen' },
@@ -90,6 +109,12 @@ const ideas: Idea[] = [
   { id: 4, projectId: 3, title: 'Prozesswissen sichtbar machen', secondaryStatusId: 'ideate', problemStatement: 'Wissen über kritische Prozessschritte ist nur bei einzelnen Personen vorhanden.', submitter: 'T. Berger', ideaOwner: 'T. Berger', businessOwner: '', implementationPathId: '', gateId: 'quality-check', gateStatus: 'open' },
 ]
 
+const projectTasks: ProjectTask[] = [
+  { id: 1, projectId: 1, title: 'APLAN abgesprochen', completed: true, templateId: 1 },
+  { id: 2, projectId: 1, title: 'IKT V abgesprochen', completed: false, templateId: 2 },
+  { id: 3, projectId: 2, title: 'APLAN abgesprochen', completed: false, templateId: 1 },
+]
+
 const app = express()
 const rootDirectory = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -100,11 +125,16 @@ app.get('/api/project-statuses', (_request, response) => response.json(projectSt
 app.get('/api/idea-stages', (_request, response) => response.json(ideaStages))
 app.get('/api/implementation-paths', (_request, response) => response.json(implementationPaths))
 app.get('/api/gates', (_request, response) => response.json(gates))
+app.get('/api/task-templates', (_request, response) => response.json(taskTemplates))
+app.get('/api/tasks', (request, response) => {
+  const projectId = Number(request.query.projectId)
+  response.json(Number.isFinite(projectId) ? projectTasks.filter((task) => task.projectId === projectId) : projectTasks)
+})
 app.get('/api/ideas', (request, response) => {
   const projectId = Number(request.query.projectId)
   response.json(Number.isFinite(projectId) ? ideas.filter((idea) => idea.projectId === projectId) : ideas)
 })
-app.get('/api/portal', (_request, response) => response.json({ projects, projectStatuses, ideas, ideaStages, implementationPaths, gates }))
+app.get('/api/portal', (_request, response) => response.json({ projects, projectStatuses, ideas, ideaStages, implementationPaths, gates, taskTemplates, projectTasks }))
 app.post('/api/projects', (request, response) => {
   const { name, client, primaryStatusId, nextStep } = request.body as Partial<(typeof projects)[number]>
   if (!name || !client || !primaryStatusId || !nextStep || !projectStatuses.some((status) => status.id === primaryStatusId)) {
@@ -113,7 +143,30 @@ app.post('/api/projects', (request, response) => {
   }
   const project = { id: projects.length + 1, name, client, primaryStatusId, progress: 0, nextStep }
   projects.push(project)
+  taskTemplates.filter((template) => template.active).forEach((template) => {
+    projectTasks.push({ id: projectTasks.length + 1, projectId: project.id, title: template.title, completed: false, templateId: template.id })
+  })
   response.status(201).json(project)
+})
+app.post('/api/tasks', (request, response) => {
+  const { projectId, title } = request.body as Partial<ProjectTask>
+  if (!projectId || !title?.trim() || !projects.some((project) => project.id === projectId)) {
+    response.status(400).json({ error: 'Projekt und Aufgabentitel sind erforderlich.' })
+    return
+  }
+  const task = { id: projectTasks.length + 1, projectId, title: title.trim(), completed: false, templateId: null }
+  projectTasks.push(task)
+  response.status(201).json(task)
+})
+app.post('/api/task-templates', (request, response) => {
+  const title = (request.body as Partial<TaskTemplate>).title?.trim()
+  if (!title) {
+    response.status(400).json({ error: 'Aufgabentitel ist erforderlich.' })
+    return
+  }
+  const template = { id: taskTemplates.length + 1, title, active: true }
+  taskTemplates.push(template)
+  response.status(201).json(template)
 })
 app.post('/api/ideas', (request, response) => {
   const { projectId, title, secondaryStatusId, problemStatement, submitter, ideaOwner, businessOwner, implementationPathId, gateId, gateStatus } = request.body as Partial<Idea>
@@ -176,6 +229,34 @@ app.patch('/api/ideas/:id', (request, response) => {
   }
   Object.assign(idea, update)
   response.json(idea)
+})
+app.patch('/api/tasks/:id', (request, response) => {
+  const task = projectTasks.find((item) => item.id === Number(request.params.id))
+  const update = request.body as Partial<ProjectTask>
+  if (!task) {
+    response.status(404).json({ error: 'Aufgabe nicht gefunden.' })
+    return
+  }
+  if (update.title !== undefined && !update.title.trim()) {
+    response.status(400).json({ error: 'Aufgabentitel darf nicht leer sein.' })
+    return
+  }
+  Object.assign(task, update)
+  response.json(task)
+})
+app.patch('/api/task-templates/:id', (request, response) => {
+  const template = taskTemplates.find((item) => item.id === Number(request.params.id))
+  const update = request.body as Partial<TaskTemplate>
+  if (!template) {
+    response.status(404).json({ error: 'Standardaufgabe nicht gefunden.' })
+    return
+  }
+  if (update.title !== undefined && !update.title.trim()) {
+    response.status(400).json({ error: 'Aufgabentitel darf nicht leer sein.' })
+    return
+  }
+  Object.assign(template, update)
+  response.json(template)
 })
 app.post('/api/project-statuses', (request, response) => {
   const status = request.body as ProjectStatus

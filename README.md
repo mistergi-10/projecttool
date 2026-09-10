@@ -8,6 +8,10 @@ Ein Projekt ist der Fuehrungsrahmen und besitzt genau einen **primaeren Projekts
 
 In der Projektakte können Name, Organisation, primärer Status, Fortschritt und nächster Schritt bearbeitet werden. Sie zeigt alle verknüpften Ideen und legt neue Ideen direkt mit der Projektzuordnung an.
 
+## Aufgaben
+
+Jedes Projekt führt eine eigene Checkliste (`/api/tasks`). Beim Anlegen eines Projekts werden alle aktiven Einträge der Standard-Taskliste automatisch kopiert. In den **Einstellungen** können diese Vorlagen (`/api/task-templates`) angelegt, umbenannt sowie für zukünftige Projekte aktiviert oder deaktiviert werden. Bestehende Projektaufgaben bleiben von späteren Vorlagenänderungen unberührt.
+
 Ein Projekt besitzt eine oder mehrere **Ideen**. Jede Idee hat einen **sekundaeren Ideenstatus** aus dem versionierten InnoV-Katalog (`/api/idea-stages`): `Ideate`, `Validate`, `Experiment`, `Evolve` und `Implement`. Damit bleiben operative Projektsteuerung und Innovationsfortschritt bewusst getrennt. Problemstellung, Ideen und Wissensstand bilden den Eingang des Prozesses und sind keine Ideenstati.
 
 ## Innovationsakte
