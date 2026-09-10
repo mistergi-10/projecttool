@@ -65,14 +65,52 @@ app.get('/api/ideas', (request, response) => {
 })
 app.get('/api/portal', (_request, response) => response.json({ projects, projectStatuses, ideas, ideaStages }))
 app.post('/api/projects', (request, response) => {
-  const project = { id: projects.length + 1, ...request.body }
+  const { name, client, primaryStatusId, nextStep } = request.body as Partial<(typeof projects)[number]>
+  if (!name || !client || !primaryStatusId || !nextStep || !projectStatuses.some((status) => status.id === primaryStatusId)) {
+    response.status(400).json({ error: 'Projektname, Organisation, Projektstatus und naechster Schritt sind erforderlich.' })
+    return
+  }
+  const project = { id: projects.length + 1, name, client, primaryStatusId, progress: 0, nextStep }
   projects.push(project)
   response.status(201).json(project)
 })
 app.post('/api/ideas', (request, response) => {
-  const idea = { id: ideas.length + 1, ...request.body } as Idea
+  const { projectId, title, secondaryStatusId } = request.body as Partial<Idea>
+  if (!projectId || !title || !secondaryStatusId || !projects.some((project) => project.id === projectId) || !ideaStages.some((stage) => stage.id === secondaryStatusId)) {
+    response.status(400).json({ error: 'Projekt, Ideentitel und Innovationsstatus sind erforderlich.' })
+    return
+  }
+  const idea = { id: ideas.length + 1, projectId, title, secondaryStatusId }
   ideas.push(idea)
   response.status(201).json(idea)
+})
+app.patch('/api/projects/:id', (request, response) => {
+  const project = projects.find((item) => item.id === Number(request.params.id))
+  const primaryStatusId = request.body.primaryStatusId as string | undefined
+  if (!project) {
+    response.status(404).json({ error: 'Projekt nicht gefunden.' })
+    return
+  }
+  if (!primaryStatusId || !projectStatuses.some((status) => status.id === primaryStatusId)) {
+    response.status(400).json({ error: 'Ungueltiger Projektstatus.' })
+    return
+  }
+  project.primaryStatusId = primaryStatusId
+  response.json(project)
+})
+app.patch('/api/ideas/:id', (request, response) => {
+  const idea = ideas.find((item) => item.id === Number(request.params.id))
+  const secondaryStatusId = request.body.secondaryStatusId as string | undefined
+  if (!idea) {
+    response.status(404).json({ error: 'Idee nicht gefunden.' })
+    return
+  }
+  if (!secondaryStatusId || !ideaStages.some((stage) => stage.id === secondaryStatusId)) {
+    response.status(400).json({ error: 'Ungueltiger Innovationsstatus.' })
+    return
+  }
+  idea.secondaryStatusId = secondaryStatusId
+  response.json(idea)
 })
 app.post('/api/project-statuses', (request, response) => {
   const status = request.body as ProjectStatus
