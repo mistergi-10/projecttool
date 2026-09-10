@@ -8,6 +8,7 @@ import {
   Lightbulb,
   ListChecks,
   Plus,
+  Search,
   Settings,
   X,
 } from "lucide-react";
@@ -38,6 +39,7 @@ type Idea = {
   implementationPathId: string;
   gateId: string;
   gateStatus: "open" | "passed" | "not-required";
+  gateDueDate: string;
 };
 type TaskTemplate = { id: number; title: string; active: boolean };
 type ProjectTask = {
@@ -46,6 +48,14 @@ type ProjectTask = {
   title: string;
   completed: boolean;
   templateId: number | null;
+  dueDate: string;
+};
+type Reminder = {
+  id: string;
+  kind: "Aufgabe" | "Gate" | "Pfadfinder-Call";
+  projectId: number;
+  title: string;
+  dueDate: string;
 };
 type PortalData = {
   projects: Project[];
@@ -57,6 +67,8 @@ type PortalData = {
   taskTemplates: TaskTemplate[];
   projectTasks: ProjectTask[];
 };
+
+const APP_VERSION = "0.2.0";
 
 const initialProjects: Project[] = [
   {
@@ -102,7 +114,14 @@ function App() {
   const [gates, setGates] = useState<Gate[]>([]);
   const [taskTemplates, setTaskTemplates] = useState<TaskTemplate[]>([]);
   const [projectTasks, setProjectTasks] = useState<ProjectTask[]>([]);
+  const [reminders, setReminders] = useState<Reminder[]>([]);
   const [apiAvailable, setApiAvailable] = useState(false);
+  const [projectQuery, setProjectQuery] = useState("");
+  const [projectStatusFilter, setProjectStatusFilter] = useState("all");
+  const [ideaQuery, setIdeaQuery] = useState("");
+  const [ideaStageFilter, setIdeaStageFilter] = useState("all");
+  const [ideaPathFilter, setIdeaPathFilter] = useState("all");
+  const [onlyOpenGates, setOnlyOpenGates] = useState(false);
   const [page, setPage] = useState<
     "overview" | "projects" | "ideas" | "settings"
   >("overview");
@@ -126,6 +145,10 @@ function App() {
         setApiAvailable(true);
       })
       .catch(() => setApiAvailable(false));
+    fetch("/api/reminders")
+      .then((response) => (response.ok ? response.json() : Promise.reject()))
+      .then((data: Reminder[]) => setReminders(data))
+      .catch(() => setReminders([]));
   }, []);
 
   const updateProjectStatus = async (
@@ -157,6 +180,9 @@ function App() {
     setIdeas((current) =>
       current.map((idea) => (idea.id === updated.id ? updated : idea)),
     );
+    fetch("/api/reminders")
+      .then((response) => response.json())
+      .then((data: Reminder[]) => setReminders(data));
   };
 
   const createProject = async (event: FormEvent<HTMLFormElement>) => {
@@ -219,15 +245,20 @@ function App() {
     setProjectTasks((current) =>
       current.map((task) => (task.id === updated.id ? updated : task)),
     );
+    fetch("/api/reminders")
+      .then((response) => response.json())
+      .then((data: Reminder[]) => setReminders(data));
   };
 
   const createTask = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const title = new FormData(event.currentTarget).get("title")?.toString() ?? "";
+    const formData = new FormData(event.currentTarget);
+    const title = formData.get("title")?.toString() ?? "";
+    const dueDate = formData.get("dueDate")?.toString() ?? "";
     const response = await fetch("/api/tasks", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ projectId: selectedProjectId, title }),
+      body: JSON.stringify({ projectId: selectedProjectId, title, dueDate }),
     });
     if (!response.ok) return setMessage("Bitte einen Aufgabentitel eingeben.");
     const task = (await response.json()) as ProjectTask;
@@ -272,6 +303,23 @@ function App() {
     "Unbekanntes Projekt";
   const selectedProject = projects.find(
     (project) => project.id === selectedProjectId,
+  );
+  const filteredProjects = projects.filter(
+    (project) =>
+      (projectStatusFilter === "all" ||
+        project.primaryStatusId === projectStatusFilter) &&
+      `${project.name} ${project.client}`
+        .toLowerCase()
+        .includes(projectQuery.toLowerCase()),
+  );
+  const filteredIdeas = ideas.filter(
+    (idea) =>
+      (ideaStageFilter === "all" || idea.secondaryStatusId === ideaStageFilter) &&
+      (ideaPathFilter === "all" || idea.implementationPathId === ideaPathFilter) &&
+      (!onlyOpenGates || idea.gateStatus === "open") &&
+      `${idea.title} ${idea.problemStatement} ${projectName(idea.projectId)}`
+        .toLowerCase()
+        .includes(ideaQuery.toLowerCase()),
   );
   const phaseSignal = (stageId: string) => {
     const stageIdeas = ideas.filter(
@@ -331,6 +379,7 @@ function App() {
         <div className="sidebar-footer">
           <span className={apiAvailable ? "status online" : "status"}></span>
           {apiAvailable ? "In-Memory-API aktiv" : "Lokale Vorschau"}
+          <small>v{APP_VERSION}</small>
         </div>
       </aside>
 
@@ -420,6 +469,36 @@ function App() {
                   <small>Projektübersicht öffnen</small>
                 </button>
               </section>
+              <section className="reminder-panel" aria-label="Nächste Fälligkeiten">
+                <div className="section-heading">
+                  <div>
+                    <h2>Nächste Fälligkeiten</h2>
+                    <p>Aufgaben, Gates und Pfadfinder-Calls mit Handlungsbedarf.</p>
+                  </div>
+                </div>
+                <div className="reminder-list">
+                  {reminders.slice(0, 5).map((reminder) => (
+                    <button
+                      className="reminder-row"
+                      key={reminder.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedProjectId(reminder.projectId);
+                        setPage("projects");
+                      }}
+                    >
+                      <time dateTime={reminder.dueDate}>{reminder.dueDate}</time>
+                      <span>{reminder.kind}</span>
+                      <strong>{reminder.title}</strong>
+                      <small>{projectName(reminder.projectId)}</small>
+                      <ChevronRight size={17} />
+                    </button>
+                  ))}
+                  {reminders.length === 0 && (
+                    <p className="empty-state">Keine offenen Fälligkeiten.</p>
+                  )}
+                </div>
+              </section>
               <section className="projects-section">
                 <div className="section-heading">
                   <div>
@@ -463,8 +542,12 @@ function App() {
                   </p>
                 </div>
               </div>
+              <div className="filter-bar">
+                <label className="search-field"><Search size={16} /><input value={projectQuery} onChange={(event) => setProjectQuery(event.target.value)} placeholder="Projekte durchsuchen" /></label>
+                <select value={projectStatusFilter} onChange={(event) => setProjectStatusFilter(event.target.value)} aria-label="Projektstatus filtern"><option value="all">Alle Status</option>{projectStatuses.map((status) => <option key={status.id} value={status.id}>{status.label}</option>)}</select>
+              </div>
               <div className="project-tabs">
-                {projects.map((project) => (
+                {filteredProjects.map((project) => (
                   <button
                     key={project.id}
                     className={
@@ -613,6 +696,7 @@ function App() {
                     onToggle={(taskId, completed) =>
                       updateTask(taskId, { completed })
                     }
+                    onUpdate={updateTask}
                     onCreate={createTask}
                   />
                 </div>
@@ -688,6 +772,12 @@ function App() {
                   <Plus size={17} /> Idee anlegen
                 </button>
               </div>
+              <div className="filter-bar idea-filters">
+                <label className="search-field"><Search size={16} /><input value={ideaQuery} onChange={(event) => setIdeaQuery(event.target.value)} placeholder="Ideen durchsuchen" /></label>
+                <select value={ideaStageFilter} onChange={(event) => setIdeaStageFilter(event.target.value)} aria-label="Phase filtern"><option value="all">Alle Phasen</option>{ideaStages.map((stage) => <option key={stage.id} value={stage.id}>{stage.label.split(" - ")[0]}</option>)}</select>
+                <select value={ideaPathFilter} onChange={(event) => setIdeaPathFilter(event.target.value)} aria-label="Umsetzungspfad filtern"><option value="all">Alle Umsetzungspfade</option>{implementationPaths.map((path) => <option key={path.id} value={path.id}>{path.label}</option>)}</select>
+                <label className="toggle-filter"><input type="checkbox" checked={onlyOpenGates} onChange={(event) => setOnlyOpenGates(event.target.checked)} /> Nur offene Gates</label>
+              </div>
               <div className="idea-board">
                 <div className="process-strip">
                   {ideaStages.map((stage) => (
@@ -703,7 +793,7 @@ function App() {
                 <div className="idea-grid">
                   {ideaStages.map((stage) => (
                     <section className="idea-column" key={stage.id}>
-                      {ideas
+                      {filteredIdeas
                         .filter((idea) => idea.secondaryStatusId === stage.id)
                         .map((idea) => (
                           <article className="idea-card" key={idea.id}>
@@ -802,10 +892,22 @@ function App() {
                                   </option>
                                 </select>
                               </label>
+                              <label>
+                                Gate fällig am
+                                <input
+                                  type="date"
+                                  value={idea.gateDueDate}
+                                  onChange={(event) =>
+                                    updateIdea(idea.id, {
+                                      gateDueDate: event.target.value,
+                                    })
+                                  }
+                                />
+                              </label>
                             </div>
                           </article>
                         ))}
-                      {ideas.every(
+                      {filteredIdeas.every(
                         (idea) => idea.secondaryStatusId !== stage.id,
                       ) && <p className="empty-phase">Keine Ideen</p>}
                     </section>
@@ -1053,10 +1155,12 @@ function ProjectRow({
 function ProjectTaskList({
   tasks,
   onToggle,
+  onUpdate,
   onCreate,
 }: {
   tasks: ProjectTask[];
   onToggle: (taskId: number, completed: boolean) => Promise<void>;
+  onUpdate: (taskId: number, update: Partial<ProjectTask>) => Promise<void>;
   onCreate: (event: FormEvent<HTMLFormElement>) => Promise<void>;
 }) {
   const completedCount = tasks.filter((task) => task.completed).length;
@@ -1075,17 +1179,17 @@ function ProjectTaskList({
       </div>
       <div className="task-list">
         {tasks.map((task) => (
-          <label
-            className={`task-row ${task.completed ? "completed" : ""}`}
-            key={task.id}
-          >
-            <input
-              type="checkbox"
-              checked={task.completed}
-              onChange={(event) => onToggle(task.id, event.target.checked)}
-            />
-            <span>{task.title}</span>
-          </label>
+          <div className={`task-row ${task.completed ? "completed" : ""}`} key={task.id}>
+            <label>
+              <input
+                type="checkbox"
+                checked={task.completed}
+                onChange={(event) => onToggle(task.id, event.target.checked)}
+              />
+              <span>{task.title}</span>
+            </label>
+            <input aria-label={`Fälligkeit für ${task.title}`} type="date" value={task.dueDate} onChange={(event) => onUpdate(task.id, { dueDate: event.target.value })} />
+          </div>
         ))}
         {tasks.length === 0 && (
           <p className="empty-state">Noch keine Aufgaben für dieses Projekt.</p>
@@ -1093,6 +1197,7 @@ function ProjectTaskList({
       </div>
       <form className="add-task-form" onSubmit={onCreate}>
         <input name="title" placeholder="Aufgabe hinzufügen" required />
+        <input name="dueDate" type="date" aria-label="Fälligkeit" />
         <button className="secondary-button" type="submit">
           <Plus size={17} /> Aufgabe
         </button>

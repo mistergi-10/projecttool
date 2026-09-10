@@ -28,6 +28,7 @@ type Idea = {
   implementationPathId: string
   gateId: string
   gateStatus: 'open' | 'passed' | 'not-required'
+  gateDueDate: string
 }
 
 type ImplementationPath = {
@@ -46,6 +47,7 @@ type TaskTemplate = {
   id: number
   title: string
   active: boolean
+  defaultDueInDays: number
 }
 
 type ProjectTask = {
@@ -54,6 +56,7 @@ type ProjectTask = {
   title: string
   completed: boolean
   templateId: number | null
+  dueDate: string
 }
 
 const projectStatuses: ProjectStatus[] = [
@@ -92,8 +95,8 @@ const gates: Gate[] = [
 ]
 
 const taskTemplates: TaskTemplate[] = [
-  { id: 1, title: 'APLAN abgesprochen', active: true },
-  { id: 2, title: 'IKT V abgesprochen', active: true },
+  { id: 1, title: 'APLAN abgesprochen', active: true, defaultDueInDays: 7 },
+  { id: 2, title: 'IKT V abgesprochen', active: true, defaultDueInDays: 14 },
 ]
 
 const projects = [
@@ -103,17 +106,32 @@ const projects = [
 ]
 
 const ideas: Idea[] = [
-  { id: 1, projectId: 1, title: 'Mobiles Lagebild für Kleindrohnen', secondaryStatusId: 'experiment', problemStatement: 'Einsatzkräfte erhalten Lageinformationen von Kleindrohnen nicht zeitgerecht und einheitlich.', submitter: 'Hptm M. Keller', ideaOwner: 'Hptm M. Keller', businessOwner: 'Oberst L. Hofmann', implementationPathId: 'innovation-unit', gateId: 'gate-2', gateStatus: 'open' },
-  { id: 2, projectId: 1, title: 'Autonome Startplatzprüfung', secondaryStatusId: 'validate', problemStatement: 'Drohnencrews benötigen eine rasche und sichere Beurteilung möglicher Startplätze.', submitter: 'Oblt S. Meier', ideaOwner: 'Oblt S. Meier', businessOwner: 'Oberst L. Hofmann', implementationPathId: 'drones', gateId: 'pathfinder-call', gateStatus: 'open' },
-  { id: 3, projectId: 2, title: 'Triagehilfe im Einsatzraum', secondaryStatusId: 'evolve', problemStatement: 'Sanitätsteams benötigen unter Zeitdruck eine einheitliche digitale Triageunterstützung.', submitter: 'Dr. A. Kern', ideaOwner: 'Dr. A. Kern', businessOwner: 'Oberst P. Kern', implementationPathId: 'rio', gateId: 'gate-3', gateStatus: 'open' },
-  { id: 4, projectId: 3, title: 'Materialfluss im Feld sichtbar machen', secondaryStatusId: 'ideate', problemStatement: 'Kritisches Material und Nachschub sind entlang der Feldlogistik nur eingeschränkt transparent.', submitter: 'Hptfw T. Berger', ideaOwner: 'Hptfw T. Berger', businessOwner: '', implementationPathId: '', gateId: 'quality-check', gateStatus: 'open' },
+  { id: 1, projectId: 1, title: 'Mobiles Lagebild für Kleindrohnen', secondaryStatusId: 'experiment', problemStatement: 'Einsatzkräfte erhalten Lageinformationen von Kleindrohnen nicht zeitgerecht und einheitlich.', submitter: 'Hptm M. Keller', ideaOwner: 'Hptm M. Keller', businessOwner: 'Oberst L. Hofmann', implementationPathId: 'innovation-unit', gateId: 'gate-2', gateStatus: 'open', gateDueDate: '2026-09-18' },
+  { id: 2, projectId: 1, title: 'Autonome Startplatzprüfung', secondaryStatusId: 'validate', problemStatement: 'Drohnencrews benötigen eine rasche und sichere Beurteilung möglicher Startplätze.', submitter: 'Oblt S. Meier', ideaOwner: 'Oblt S. Meier', businessOwner: 'Oberst L. Hofmann', implementationPathId: 'drones', gateId: 'pathfinder-call', gateStatus: 'open', gateDueDate: '2026-09-12' },
+  { id: 3, projectId: 2, title: 'Triagehilfe im Einsatzraum', secondaryStatusId: 'evolve', problemStatement: 'Sanitätsteams benötigen unter Zeitdruck eine einheitliche digitale Triageunterstützung.', submitter: 'Dr. A. Kern', ideaOwner: 'Dr. A. Kern', businessOwner: 'Oberst P. Kern', implementationPathId: 'rio', gateId: 'gate-3', gateStatus: 'open', gateDueDate: '2026-09-25' },
+  { id: 4, projectId: 3, title: 'Materialfluss im Feld sichtbar machen', secondaryStatusId: 'ideate', problemStatement: 'Kritisches Material und Nachschub sind entlang der Feldlogistik nur eingeschränkt transparent.', submitter: 'Hptfw T. Berger', ideaOwner: 'Hptfw T. Berger', businessOwner: '', implementationPathId: '', gateId: 'quality-check', gateStatus: 'open', gateDueDate: '2026-09-15' },
 ]
 
 const projectTasks: ProjectTask[] = [
-  { id: 1, projectId: 1, title: 'APLAN abgesprochen', completed: true, templateId: 1 },
-  { id: 2, projectId: 1, title: 'IKT V abgesprochen', completed: false, templateId: 2 },
-  { id: 3, projectId: 2, title: 'APLAN abgesprochen', completed: false, templateId: 1 },
+  { id: 1, projectId: 1, title: 'APLAN abgesprochen', completed: true, templateId: 1, dueDate: '2026-09-09' },
+  { id: 2, projectId: 1, title: 'IKT V abgesprochen', completed: false, templateId: 2, dueDate: '2026-09-16' },
+  { id: 3, projectId: 2, title: 'APLAN abgesprochen', completed: false, templateId: 1, dueDate: '2026-09-11' },
 ]
+
+const dueDateAfter = (days: number) => {
+  const date = new Date()
+  date.setDate(date.getDate() + days)
+  return date.toISOString().slice(0, 10)
+}
+
+const reminders = () => [
+  ...projectTasks
+    .filter((task) => !task.completed && task.dueDate)
+    .map((task) => ({ id: `task-${task.id}`, kind: 'Aufgabe', projectId: task.projectId, title: task.title, dueDate: task.dueDate })),
+  ...ideas
+    .filter((idea) => idea.gateStatus === 'open' && idea.gateDueDate)
+    .map((idea) => ({ id: `gate-${idea.id}`, kind: idea.gateId === 'pathfinder-call' ? 'Pfadfinder-Call' : 'Gate', projectId: idea.projectId, title: gates.find((gate) => gate.id === idea.gateId)?.label ?? 'Gate', dueDate: idea.gateDueDate })),
+].sort((left, right) => left.dueDate.localeCompare(right.dueDate))
 
 const app = express()
 const rootDirectory = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
@@ -130,6 +148,7 @@ app.get('/api/tasks', (request, response) => {
   const projectId = Number(request.query.projectId)
   response.json(Number.isFinite(projectId) ? projectTasks.filter((task) => task.projectId === projectId) : projectTasks)
 })
+app.get('/api/reminders', (_request, response) => response.json(reminders()))
 app.get('/api/ideas', (request, response) => {
   const projectId = Number(request.query.projectId)
   response.json(Number.isFinite(projectId) ? ideas.filter((idea) => idea.projectId === projectId) : ideas)
@@ -144,37 +163,38 @@ app.post('/api/projects', (request, response) => {
   const project = { id: projects.length + 1, name, client, primaryStatusId, progress: 0, nextStep }
   projects.push(project)
   taskTemplates.filter((template) => template.active).forEach((template) => {
-    projectTasks.push({ id: projectTasks.length + 1, projectId: project.id, title: template.title, completed: false, templateId: template.id })
+    projectTasks.push({ id: projectTasks.length + 1, projectId: project.id, title: template.title, completed: false, templateId: template.id, dueDate: dueDateAfter(template.defaultDueInDays) })
   })
   response.status(201).json(project)
 })
 app.post('/api/tasks', (request, response) => {
-  const { projectId, title } = request.body as Partial<ProjectTask>
+  const { projectId, title, dueDate } = request.body as Partial<ProjectTask>
   if (!projectId || !title?.trim() || !projects.some((project) => project.id === projectId)) {
     response.status(400).json({ error: 'Projekt und Aufgabentitel sind erforderlich.' })
     return
   }
-  const task = { id: projectTasks.length + 1, projectId, title: title.trim(), completed: false, templateId: null }
+  const task = { id: projectTasks.length + 1, projectId, title: title.trim(), completed: false, templateId: null, dueDate: dueDate ?? '' }
   projectTasks.push(task)
   response.status(201).json(task)
 })
 app.post('/api/task-templates', (request, response) => {
-  const title = (request.body as Partial<TaskTemplate>).title?.trim()
+  const { title: rawTitle, defaultDueInDays } = request.body as Partial<TaskTemplate>
+  const title = rawTitle?.trim()
   if (!title) {
     response.status(400).json({ error: 'Aufgabentitel ist erforderlich.' })
     return
   }
-  const template = { id: taskTemplates.length + 1, title, active: true }
+  const template = { id: taskTemplates.length + 1, title, active: true, defaultDueInDays: Number.isInteger(defaultDueInDays) && defaultDueInDays! >= 0 ? defaultDueInDays : 14 }
   taskTemplates.push(template)
   response.status(201).json(template)
 })
 app.post('/api/ideas', (request, response) => {
-  const { projectId, title, secondaryStatusId, problemStatement, submitter, ideaOwner, businessOwner, implementationPathId, gateId, gateStatus } = request.body as Partial<Idea>
+  const { projectId, title, secondaryStatusId, problemStatement, submitter, ideaOwner, businessOwner, implementationPathId, gateId, gateStatus, gateDueDate } = request.body as Partial<Idea>
   if (!projectId || !title || !secondaryStatusId || !problemStatement || !submitter || !ideaOwner || !projects.some((project) => project.id === projectId) || !ideaStages.some((stage) => stage.id === secondaryStatusId)) {
     response.status(400).json({ error: 'Projekt, Ideentitel, Problemstellung, Ideengeber, Ideenowner und Innovationsstatus sind erforderlich.' })
     return
   }
-  const idea = { id: ideas.length + 1, projectId, title, secondaryStatusId, problemStatement, submitter, ideaOwner, businessOwner: businessOwner ?? '', implementationPathId: implementationPathId ?? '', gateId: gateId ?? 'quality-check', gateStatus: gateStatus ?? 'open' } as Idea
+  const idea = { id: ideas.length + 1, projectId, title, secondaryStatusId, problemStatement, submitter, ideaOwner, businessOwner: businessOwner ?? '', implementationPathId: implementationPathId ?? '', gateId: gateId ?? 'quality-check', gateStatus: gateStatus ?? 'open', gateDueDate: gateDueDate ?? '' } as Idea
   ideas.push(idea)
   response.status(201).json(idea)
 })

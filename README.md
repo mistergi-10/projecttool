@@ -12,6 +12,10 @@ In der Projektakte können Name, Organisation, primärer Status, Fortschritt und
 
 Jedes Projekt führt eine eigene Checkliste (`/api/tasks`). Beim Anlegen eines Projekts werden alle aktiven Einträge der Standard-Taskliste automatisch kopiert. In den **Einstellungen** können diese Vorlagen (`/api/task-templates`) angelegt, umbenannt sowie für zukünftige Projekte aktiviert oder deaktiviert werden. Bestehende Projektaufgaben bleiben von späteren Vorlagenänderungen unberührt.
 
+## Fälligkeiten und Filter
+
+Aufgaben und offene Steuerungsgates führen eine Fälligkeit. Der Endpunkt `/api/reminders` liefert sie nach Datum sortiert; auf der Übersicht sind die nächsten fünf Punkte direkt mit der zugehörigen Projektakte verknüpft. In den Projekt- und Ideenansichten stehen Text- und Statusfilter zur Verfügung; Ideen lassen sich zudem nach Phase, Umsetzungspfad und offenen Gates filtern.
+
 Ein Projekt besitzt eine oder mehrere **Ideen**. Jede Idee hat einen **sekundaeren Ideenstatus** aus dem versionierten InnoV-Katalog (`/api/idea-stages`): `Ideate`, `Validate`, `Experiment`, `Evolve` und `Implement`. Damit bleiben operative Projektsteuerung und Innovationsfortschritt bewusst getrennt. Problemstellung, Ideen und Wissensstand bilden den Eingang des Prozesses und sind keine Ideenstati.
 
 ## Innovationsakte
