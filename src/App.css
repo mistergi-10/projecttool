@@ -839,6 +839,42 @@ form label {
 .event-card p {
   font-size: 13px;
 }
+.event-ideas {
+  display: grid;
+  gap: 6px;
+  color: #52719d;
+  font: 12px "Segoe UI", sans-serif;
+}
+.event-ideas select {
+  min-height: 76px;
+  width: 100%;
+  border: 1px solid #c5d7f0;
+  border-radius: 4px;
+  padding: 5px;
+  color: #234876;
+  background: #f9fbff;
+  font: 12px "Segoe UI", sans-serif;
+}
+.event-idea-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.event-idea-chips span {
+  max-width: 100%;
+  overflow: hidden;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: #e5f0ff;
+  color: #2260a7;
+  font: 11px "Segoe UI", sans-serif;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.event-idea-chips small {
+  color: #7a8eaa;
+  font: 12px "Segoe UI", sans-serif;
+}
 .event-type {
   display: inline-flex;
   align-items: center;

@@ -66,6 +66,7 @@ type CalendarEvent = {
   location: string;
   type: "InnoBoard V" | "Pfadfinder-Call" | "Workshop";
   projectId: number | null;
+  ideaIds: number[];
 };
 type PortalData = {
   projects: Project[];
@@ -263,6 +264,19 @@ function App() {
     fetch("/api/reminders")
       .then((response) => response.json())
       .then((data: Reminder[]) => setReminders(data));
+  };
+
+  const updateEventIdeas = async (eventId: number, ideaIds: number[]) => {
+    const response = await fetch(`/api/events/${eventId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ideaIds }),
+    });
+    if (!response.ok) return setMessage("Die Ideenverknüpfung konnte nicht gespeichert werden.");
+    const updated = (await response.json()) as CalendarEvent;
+    setEvents((current) =>
+      current.map((event) => (event.id === updated.id ? updated : event)),
+    );
   };
 
   const createTask = async (event: FormEvent<HTMLFormElement>) => {
@@ -794,6 +808,12 @@ function App() {
                   return <article className="event-card" key={event.id}>
                     <time dateTime={event.date}><strong>{date.toLocaleDateString("de-CH", { day: "2-digit" })}</strong><span>{date.toLocaleDateString("de-CH", { month: "short", year: "numeric" })}</span></time>
                     <div><span className="event-type"><CalendarDays size={15} /> {event.type}</span><h3>{event.title}</h3><p>{event.time} Uhr · {event.location}</p></div>
+                    <label className="event-ideas">Ideen für die Sitzung
+                      <select multiple value={event.ideaIds.map(String)} onChange={(selectEvent) => updateEventIdeas(event.id, Array.from(selectEvent.target.selectedOptions, (option) => Number(option.value)))}>
+                        {ideas.map((idea) => <option key={idea.id} value={idea.id}>{idea.title}</option>)}
+                      </select>
+                    </label>
+                    <div className="event-idea-chips">{event.ideaIds.length ? event.ideaIds.map((ideaId) => <span key={ideaId}>{ideas.find((idea) => idea.id === ideaId)?.title}</span>) : <small>Keine Ideen verknüpft</small>}</div>
                   </article>;
                 })}
               </div>

@@ -67,6 +67,7 @@ type CalendarEvent = {
   location: string
   type: 'InnoBoard V' | 'Pfadfinder-Call' | 'Workshop'
   projectId: number | null
+  ideaIds: number[]
 }
 
 const projectStatuses: ProjectStatus[] = [
@@ -129,10 +130,10 @@ const projectTasks: ProjectTask[] = [
 ]
 
 const calendarEvents: CalendarEvent[] = [
-  { id: 1, title: 'InnoBoard V - 1. Sitzung', date: '2027-02-18', time: '09:00', location: 'Bern, Sitzungszimmer A', type: 'InnoBoard V', projectId: null },
-  { id: 2, title: 'InnoBoard V - 2. Sitzung', date: '2027-05-20', time: '09:00', location: 'Bern, Sitzungszimmer A', type: 'InnoBoard V', projectId: null },
-  { id: 3, title: 'InnoBoard V - 3. Sitzung', date: '2027-08-19', time: '09:00', location: 'Bern, Sitzungszimmer A', type: 'InnoBoard V', projectId: null },
-  { id: 4, title: 'InnoBoard V - 4. Sitzung', date: '2027-11-18', time: '09:00', location: 'Bern, Sitzungszimmer A', type: 'InnoBoard V', projectId: null },
+  { id: 1, title: 'InnoBoard V - 1. Sitzung', date: '2027-02-18', time: '09:00', location: 'Bern, Sitzungszimmer A', type: 'InnoBoard V', projectId: null, ideaIds: [2, 4] },
+  { id: 2, title: 'InnoBoard V - 2. Sitzung', date: '2027-05-20', time: '09:00', location: 'Bern, Sitzungszimmer A', type: 'InnoBoard V', projectId: null, ideaIds: [1] },
+  { id: 3, title: 'InnoBoard V - 3. Sitzung', date: '2027-08-19', time: '09:00', location: 'Bern, Sitzungszimmer A', type: 'InnoBoard V', projectId: null, ideaIds: [3] },
+  { id: 4, title: 'InnoBoard V - 4. Sitzung', date: '2027-11-18', time: '09:00', location: 'Bern, Sitzungszimmer A', type: 'InnoBoard V', projectId: null, ideaIds: [] },
 ]
 
 const dueDateAfter = (days: number) => {
@@ -267,6 +268,20 @@ app.patch('/api/ideas/:id', (request, response) => {
   }
   Object.assign(idea, update)
   response.json(idea)
+})
+app.patch('/api/events/:id', (request, response) => {
+  const event = calendarEvents.find((item) => item.id === Number(request.params.id))
+  const ideaIds = (request.body as Partial<CalendarEvent>).ideaIds
+  if (!event) {
+    response.status(404).json({ error: 'Termin nicht gefunden.' })
+    return
+  }
+  if (!Array.isArray(ideaIds) || ideaIds.some((ideaId) => !Number.isInteger(ideaId) || !ideas.some((idea) => idea.id === ideaId))) {
+    response.status(400).json({ error: 'Die angegebenen Ideen sind ungültig.' })
+    return
+  }
+  event.ideaIds = [...new Set(ideaIds)]
+  response.json(event)
 })
 app.patch('/api/tasks/:id', (request, response) => {
   const task = projectTasks.find((item) => item.id === Number(request.params.id))
